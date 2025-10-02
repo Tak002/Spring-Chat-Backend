@@ -1,82 +1,168 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>STOMP WebSocket Chat Test</title>
+    <meta charset="UTF-8" />
+    <title>STOMP WebSocket Chat Test (Dynamic Room)</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
-        body { font-family: sans-serif; }
+        body { font-family: sans-serif; line-height: 1.4; }
         input, button { font-size: 1rem; }
-        #messages { border: 1px solid #ccc; height: 200px; overflow-y: auto; margin-bottom: 1em; padding: 0.5em; }
+        #messages { border: 1px solid #ccc; height: 260px; overflow-y: auto; margin: 0.8em 0; padding: 0.5em; }
+        #status { color: #555; margin-left: 0.5em; }
+        .row { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+        .grow { flex: 1; }
     </style>
 </head>
 <body>
 <h2>STOMP WebSocket 채팅 테스트</h2>
-<div>
+
+<div class="row">
     <strong>닉네임:</strong>
-    <input type="text" id="sender" value="takUniv">
+    <input type="text" id="sender" value="takUniv" />
     <strong>채팅방:</strong>
-    <input type="text" id="roomId" value="public">
+    <input type="text" id="roomId" value="public" />
+    <button id="btnConnectRoom">연결</button>
+    <button id="btnDisconnect">연결 종료</button>
+    <span id="status"></span>
 </div>
+
 <div id="messages"></div>
-<input type="text" id="content" placeholder="메시지 입력...">
-<button onclick="sendMessage()">전송</button>
-<button onclick="disconnect()">연결 종료</button>
+
+<div class="row">
+    <input class="grow" type="text" id="content" placeholder="메시지 입력..." />
+    <button id="btnSend">전송</button>
+</div>
+
 <script>
+    // ===== 설정 =====
+    const ENDPOINT = 'http://localhost:8080/ws-sockjs'; // Spring WebSocketConfig의 SockJS 엔드포인트
+    const TOPIC_PREFIX = '/topic/';                      // 방 구독: /topic/{roomId}
+    const APP_SEND = '/app/chat/';            // 서버 수신 엔드포인트 (필요시 변경)
+
+    // ===== 상태 =====
     let stompClient = null;
+    let currentSubscription = null;
+    let currentRoomId = '';
 
-    function connect() {
-        // 서버 엔드포인트: Spring WebSocketConfig의 endpoint와 맞춰주세요!
-        const socket = new SockJS('http://localhost:8080/ws-chat');
+    // ===== 유틸 =====
+    function qs(id) { return document.getElementById(id); }
+    function now() { return new Date().toLocaleTimeString(); }
+    function setStatus(text) { qs('status').textContent = text; }
+
+    function showMessage(msg) {
+        const box = qs('messages');
+        box.insertAdjacentHTML('beforeend', `${msg}<br/>`);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // ===== 연결 / 구독 =====
+    function ensureConnected(onConnected) {
+        if (stompClient && stompClient.connected) {
+            onConnected && onConnected();
+            return;
+        }
+        const socket = new SockJS(ENDPOINT);
         stompClient = Stomp.over(socket);
+        // 콘솔 로그 줄이고 싶으면 아래 한 줄 추가
+        // stompClient.debug = null;
 
-        stompClient.connect({}, function(frame) {
-            showMessage('서버 연결됨: ' + frame);
-
-            // 구독 경로: 서버 @SendTo 경로와 일치!
-            stompClient.subscribe('/topic/public', function(message) {
-                const msg = JSON.parse(message.body);
-                showMessage(`[${msg.roomId}] ${msg.sender}: ${msg.content}`);
-            });
-        }, function(error) {
-            showMessage('연결 오류: ' + error);
+        stompClient.connect({}, frame => {
+            setStatus(`서버 연결됨 (${now()})`);
+            showMessage(`서버 연결됨: ${frame}`);
+            onConnected && onConnected();
+        }, error => {
+            setStatus(`연결 오류 (${now()}): ${error}`);
+            showMessage(`연결 오류: ${error}`);
         });
     }
 
-    function sendMessage() {
-        const sender = document.getElementById('sender').value;
-        const content = document.getElementById('content').value;
-        const roomId = document.getElementById('roomId').value;
+    function subscribeRoom(roomId) {
         if (!stompClient || !stompClient.connected) {
-            showMessage('먼저 서버에 연결하세요!');
+            showMessage('서버와 연결되지 않았습니다. 먼저 연결을 수행합니다.');
+            ensureConnected(() => subscribeRoom(roomId));
             return;
         }
-        stompClient.send('/app/chat.sendMessage', {}, JSON.stringify({
-            sender: sender,
-            content: content,
-            roomId: roomId
-        }));
-        document.getElementById('content').value = '';
+        // 기존 구독 해제
+        if (currentSubscription) {
+            try { currentSubscription.unsubscribe(); } catch (_) {}
+            currentSubscription = null;
+        }
+
+        currentRoomId = roomId;
+        const destination = `${TOPIC_PREFIX}${roomId}`;
+
+        currentSubscription = stompClient.subscribe(destination, frame => {
+            try {
+                const msg = JSON.parse(frame.body);
+                const rid = msg.roomId ?? roomId; // 메시지에 roomId가 없으면 현재 방 표시
+                showMessage(`[${rid}] ${msg.sender}: ${msg.content}`);
+            } catch {
+                // JSON이 아닐 수 있으므로 안전하게 처리
+                showMessage(`[${roomId}] ${frame.body}`);
+            }
+        });
+
+        setStatus(`방 연결: ${destination} (${now()})`);
+        showMessage(`방 구독됨: ${destination}`);
     }
 
-    function showMessage(msg) {
-        const messages = document.getElementById('messages');
-        messages.innerHTML += msg + '<br>';
-        messages.scrollTop = messages.scrollHeight;
+    // ===== 전송 / 종료 =====
+    function sendMessage() {
+        const sender = qs('sender').value.trim();
+        const content = qs('content').value;
+        const roomId = currentRoomId || qs('roomId').value.trim();
+
+        if (!stompClient || !stompClient.connected) {
+            showMessage('먼저 서버에 연결하고 방을 선택하세요.');
+            return;
+        }
+        if (!roomId) {
+            showMessage('방 ID를 입력 후 [연결]을 눌러주세요.');
+            return;
+        }
+
+        stompClient.send(APP_SEND + roomId, {}, JSON.stringify({
+            sender,
+            content,
+            roomId
+        }));
+        qs('content').value = '';
     }
 
     function disconnect() {
-        if (stompClient !== null) {
+        if (currentSubscription) {
+            try { currentSubscription.unsubscribe(); } catch (_) {}
+            currentSubscription = null;
+        }
+        currentRoomId = '';
+        if (stompClient) {
             stompClient.disconnect(() => {
+                setStatus(`연결 종료됨 (${now()})`);
                 showMessage('연결 종료됨');
             });
             stompClient = null;
         }
     }
 
-    // 자동 연결
-    connect();
+    // ===== 이벤트 바인딩 =====
+    qs('btnConnectRoom').addEventListener('click', () => {
+        const roomId = qs('roomId').value.trim();
+        if (!roomId) {
+            showMessage('방 ID를 입력하세요.');
+            return;
+        }
+        ensureConnected(() => subscribeRoom(roomId));
+    });
+
+    qs('btnDisconnect').addEventListener('click', disconnect);
+    qs('btnSend').addEventListener('click', sendMessage);
+    qs('content').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // 필요 시 자동 서버 연결만 수행 (방은 수동으로 선택)
+    ensureConnected();
 </script>
 </body>
 </html>
