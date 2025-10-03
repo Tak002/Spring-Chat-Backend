@@ -33,61 +33,67 @@ jobs:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      # 1) SSH 키를 러너에 파일로 생성 (컨테이너 X, 권한 OK)
       - name: Prepare SSH key
-        # RUNNER_TEMP 는 항상 쓰기 가능; ssh 클라이언트는 러너에 기본 탑재
         shell: bash
         run: |
           set -euo pipefail
           KEY_FILE="${RUNNER_TEMP}/ec2.key"
           printf '%s' "${{ secrets.SERVER_SSH_KEY }}" > "$KEY_FILE"
-          # Windows CRLF 방어
           sed -i 's/\r$//' "$KEY_FILE"
           chmod 600 "$KEY_FILE"
           echo "KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
 
-      # 2) 네이티브 SSH로 원격 명령 실행 (컨테이너 사용 안함)
       - name: Deploy over native SSH
         shell: bash
         env:
-          HOST: ${{ secrets.SERVER_HOST }}
-          USER: ${{ secrets.SERVER_USER }}
-          PORT: ${{ secrets.SERVER_SSH_PORT }}
-          IMAGE: ${{ secrets.DOCKER_IMAGE }}
-          REG_USER: ${{ secrets.REGISTRY_USERNAME }}
-          REG_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-          CONTAINER: ${{ secrets.CONTAINER_NAME }}
-          APP_PORT: ${{ secrets.APP_PORT }}
+          HOST:       ${{ secrets.SERVER_HOST }}
+          USER:       ${{ secrets.SERVER_USER }}
+          PORT:       ${{ secrets.SERVER_SSH_PORT }}
+          IMAGE:      ${{ secrets.DOCKER_IMAGE }}
+          REG_USER:   ${{ secrets.REGISTRY_USERNAME }}
+          REG_TOKEN:  ${{ secrets.REGISTRY_TOKEN }}
+          CONTAINER:  ${{ secrets.CONTAINER_NAME }}
+          APP_PORT:   ${{ secrets.APP_PORT }}
         run: |
           set -euo pipefail
-          : "${PORT:=22}"               # 비었으면 22 사용
-          # 원격에서 바로 실행할 스크립트 구성 (비밀값은 GitHub가 자동 마스킹)
-          REMOTE_SCRIPT=$(cat <<'EOSSH'
+          : "${PORT:=22}"
+          : "${CONTAINER:=websocket-app}"
+          : "${APP_PORT:=8080}"
+
+          # 이미지 레퍼런스는 소문자만 허용
+          IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
+
+          # 값들을 인자로 넘겨 원격에서 안전하게 사용 (플레이스홀더 없음)
+          ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" <<'EOS'
           set -euo pipefail
+          IMAGE="$1"
+          REG_USER="$2"
+          REG_TOKEN="$3"
+          CONTAINER="$4"
+          APP_PORT="$5"
 
-          docker login -u "__REG_USER__" -p "__REG_TOKEN__"
-          docker pull "__IMAGE__:latest"
+          docker login -u "$REG_USER" -p "$REG_TOKEN"
+          docker pull "$IMAGE:latest"
 
-          docker stop "__CONTAINER__" || true
-          docker rm   "__CONTAINER__" || true
+          docker stop "$CONTAINER" 2>/dev/null || true
+          docker rm   "$CONTAINER" 2>/dev/null || true
 
-          docker run -d --name "__CONTAINER__" \
-            --env-file /opt/websocket/.env \
-            -p __APP_PORT__:8080 \
-            "__IMAGE__:latest"
+          ENV_OPT=""
+          if [ -f /opt/websocket/.env ]; then
+            if [ -r /opt/websocket/.env ]; then
+              ENV_OPT="--env-file /opt/websocket/.env"
+            else
+              echo "[WARN] /opt/websocket/.env exists but unreadable; running without env-file."
+            fi
+          else
+            echo "[WARN] /opt/websocket/.env not found; running without env-file."
+          fi
 
-          docker ps --filter "name=__CONTAINER__"
-          EOSSH
-          )
+          docker run -d --name "$CONTAINER" \
+            $ENV_OPT \
+            -p "$APP_PORT":8080 \
+            "$IMAGE:latest"
 
-          # 자리표시자를 실제 값으로 치환
-          REMOTE_SCRIPT="${REMOTE_SCRIPT/__REG_USER__/${REG_USER}}"
-          REMOTE_SCRIPT="${REMOTE_SCRIPT/__REG_TOKEN__/${REG_TOKEN}}"
-          REMOTE_SCRIPT="${REMOTE_SCRIPT/__IMAGE__/${IMAGE}}"
-          REMOTE_SCRIPT="${REMOTE_SCRIPT/__CONTAINER__/${CONTAINER}}"
-          REMOTE_SCRIPT="${REMOTE_SCRIPT/__APP_PORT__/${APP_PORT}}"
-
-          # 첫 접속시 호스트키 확인 건너뜀 (초기 배포 편의)
-          ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" "bash -s" <<< "$REMOTE_SCRIPT"
+          docker ps --filter "name=$CONTAINER"
+          EOS
