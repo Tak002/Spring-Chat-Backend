@@ -60,8 +60,6 @@ jobs:
           REG_USER:     ${{ secrets.REGISTRY_USERNAME }}
           REG_TOKEN:    ${{ secrets.REGISTRY_TOKEN }}
           APP_PORT:     ${{ secrets.APP_PORT }}
-          REDIS_HOST:   ${{ secrets.REDIS_HOST }}
-          REDIS_PORT:   ${{ secrets.REDIS_PORT }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           WS_ENDPOINT:  ${{ secrets.WS_ENDPOINT }}
         run: |
@@ -72,14 +70,12 @@ jobs:
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
 
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$APP_PORT" "$REDIS_HOST" "$REDIS_PORT" "$REDIS_PASSWORD" "$WS_ENDPOINT" <<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$APP_PORT" "$REDIS_PASSWORD" "$WS_ENDPOINT" <<'EOS'
           set -euo pipefail
           IMAGE="$1"
           REG_USER="$2"
           REG_TOKEN="$3"
           APP_PORT="$4"
-          REDIS_HOST="$5"
-          REDIS_PORT="$6"
           REDIS_PASSWORD="$7"
           WS_ENDPOINT="$8"
 
