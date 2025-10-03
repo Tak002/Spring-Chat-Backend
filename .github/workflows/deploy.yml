@@ -8,6 +8,10 @@ jobs:
   docker-build-and-push:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Key
+        run: |
+          echo "${{ secrets.SERVER_SSH_KEY }}" | head -5
+
       # 1) 체크아웃
       - name: Checkout
         uses: actions/checkout@v4
