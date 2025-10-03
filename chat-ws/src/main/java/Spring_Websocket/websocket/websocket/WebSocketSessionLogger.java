@@ -1,5 +1,5 @@
 // src/main/java/Spring_Websocket/websocket/WebSocketSessionLogger.java
-package Spring_Websocket.websocket;
+package Spring_Websocket.websocket.websocket;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
