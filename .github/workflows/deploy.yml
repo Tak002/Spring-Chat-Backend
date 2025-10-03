@@ -81,14 +81,14 @@ jobs:
           cd /opt/chat-ws
 
           sudo bash -c 'cat > .env' <<'ENVEOF'
-          DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}:latest
-          SPRING_PROFILES_ACTIVE=prod
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          APP_PORT=${{ secrets.APP_PORT }}
-          # WS_ENDPOINT=${{ secrets.WS_ENDPOINT }}
-          ENVEOF
+DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}:latest
+SPRING_PROFILES_ACTIVE=prod
+REDIS_HOST=${{ secrets.REDIS_HOST }}
+REDIS_PORT=${{ secrets.REDIS_PORT }}
+REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+APP_PORT=${{ secrets.APP_PORT }}
+# WS_ENDPOINT=${{ secrets.WS_ENDPOINT }}
+ENVEOF
           sudo chmod 600 .env
           sudo chown root:root .env
   
