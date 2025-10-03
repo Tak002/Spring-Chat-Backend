@@ -38,37 +38,41 @@ jobs:
             ${{ secrets.DOCKER_IMAGE }}:latest
             ${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
 
-  deploy:
-    needs: docker-build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      # 1) Secrets에 저장된 PEM을 파일로 복원 (개행/CRLF 이슈 회피)
-      - name: Write SSH key to file
-        run: |
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ec2.key
-          sed -i 's/\r$//' ec2.key
-          chmod 600 ec2.key
-
-      # 2) SSH로 원격 배포
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}     # ubuntu 또는 ec2-user
-          key_path: ec2.key                        # ← key 대신 key_path 사용
-          port: 22                             # 커스텀 포트면 값 변경
-          script_stop: true
-          script: |
-            set -e
-            docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p "${{ secrets.REGISTRY_TOKEN }}"
-            docker pull "${{ secrets.DOCKER_IMAGE }}:latest"
-
-            docker stop "${{ secrets.CONTAINER_NAME }}" || true
-            docker rm   "${{ secrets.CONTAINER_NAME }}" || true
-
-            docker run -d --name "${{ secrets.CONTAINER_NAME }}" \
-              --env-file /opt/websocket/.env \
-              -p ${{ secrets.APP_PORT }}:8080 \
-              "${{ secrets.DOCKER_IMAGE }}:latest"
-
-            docker ps --filter "name=${{ secrets.CONTAINER_NAME }}"
+deploy:
+  needs: docker-build-and-push
+  runs-on: ubuntu-latest
+  steps:
+    - name: Prepare SSH key (in HOME/.ssh)
+    # $HOME 는 컨테이너에도 마운트되어 접근됩니다.
+    # .ssh 디렉토리 권한 700, 키 파일 400로 설정
+      run: |
+        mkdir -p "$HOME/.ssh"
+        echo "${{ secrets.SERVER_SSH_KEY }}" > "$HOME/.ssh/ec2.key"
+        sed -i 's/\r$//' "$HOME/.ssh/ec2.key"
+        chmod 700 "$HOME/.ssh"
+        chmod 400 "$HOME/.ssh/ec2.key"
+        ls -l "$HOME/.ssh"  # (디버그용) 권한 확인
+  
+        - name: Deploy via SSH
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host:     ${{ secrets.SERVER_HOST }}
+            username: ${{ secrets.SERVER_USER }}         # ubuntu 또는 ec2-user
+            key_path: ${{ env.HOME }}/.ssh/ec2.key      # ← workspace가 아닌 HOME/.ssh 경로
+            port:     22                                 # 커스텀 포트면 변경
+            script_stop: true
+            script: |
+              set -e
+              docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p "${{ secrets.REGISTRY_TOKEN }}"
+              docker pull "${{ secrets.DOCKER_IMAGE }}:latest"
+              
+              docker stop "${{ secrets.CONTAINER_NAME }}" || true
+              docker rm   "${{ secrets.CONTAINER_NAME }}" || true
+              
+              docker run -d --name "${{ secrets.CONTAINER_NAME }}" \
+                --env-file /opt/websocket/.env \
+                -p ${{ secrets.APP_PORT }}:8080 \
+                "${{ secrets.DOCKER_IMAGE }}:latest"
+              
+              docker ps --filter "name=${{ secrets.CONTAINER_NAME }}"
+  
