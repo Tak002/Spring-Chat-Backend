@@ -36,9 +36,10 @@
 
 <script>
     // ===== 설정 =====
-    const ENDPOINT = "__WS_ENDPOINT__" !== "__WS_ENDPOINT__"
-        ? "__WS_ENDPOINT__"
-        : "http://localhost:8080/ws-sockjs";    const TOPIC_PREFIX = '/topic/';                      // 방 구독: /topic/{roomId}
+    const ENDPOINT = "__WS_ENDPOINT__" === "__"+"WS_ENDPOINT__"
+        ? "http://localhost:8080/ws-sockjs"
+        : "__WS_ENDPOINT__";
+    const TOPIC_PREFIX = '/topic/';                      // 방 구독: /topic/{roomId}
     const APP_SEND = '/app/chat/';            // 서버 수신 엔드포인트 (필요시 변경)
 
     // ===== 상태 =====
