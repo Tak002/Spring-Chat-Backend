@@ -1,4 +1,4 @@
-package Spring_Websocket.websocket;
+package Spring_Websocket.websocket.chat;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
