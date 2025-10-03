@@ -9,7 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - name: Inject WebSocket endpoint
+        run: |
+          WS_ENDPOINT="${{ secrets.WS_ENDPOINT }}"
+          FILE=./websocket/src/main/resources/static/index.html
+          if [ -n "$WS_ENDPOINT" ]; then
+            echo "Injecting WS_ENDPOINT=$WS_ENDPOINT into $FILE"
+            sed -i "s|__WS_ENDPOINT__|$WS_ENDPOINT|g" "$FILE"
+          else
+            echo "[WARN] WS_ENDPOINT not set; keeping default (localhost)."
+          fi
       - name: Login to Docker registry
         uses: docker/login-action@v3
         with:
