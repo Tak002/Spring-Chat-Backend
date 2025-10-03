@@ -78,7 +78,7 @@ jobs:
           sudo mkdir -p /opt/chat-ws
           cd /opt/chat-ws
 
-          # .env 파일 한 줄씩 echo로 생성 (중첩 heredoc 절대 사용하지 말기)
+          # .env 파일 한 줄씩 echo로 생성 (heredoc 대신 안전)
           sudo bash -c "echo DOCKER_IMAGE=\${IMAGE} > .env"
           sudo bash -c "echo SPRING_PROFILES_ACTIVE=prod >> .env"
           sudo bash -c "echo REDIS_HOST=localhost >> .env"
@@ -91,23 +91,21 @@ jobs:
           sudo chown root:root .env
 
           if [ ! -f docker-compose.yml ]; then
-            sudo bash -c 'cat > docker-compose.yml' <<YML
-services:
-  chat-ws:
-    image: \${DOCKER_IMAGE}
-    ports:
-      - "${APP_PORT:-8080}:8080"
-    env_file:
-      - .env
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 15s
-YML
-            fi
+            sudo bash -c "echo 'services:' > docker-compose.yml"
+            sudo bash -c "echo '  chat-ws:' >> docker-compose.yml"
+            sudo bash -c "echo '    image: \${DOCKER_IMAGE}' >> docker-compose.yml"
+            sudo bash -c "echo '    ports:' >> docker-compose.yml"
+            sudo bash -c "echo '      - \"\${APP_PORT:-8080}:8080\"' >> docker-compose.yml"
+            sudo bash -c "echo '    env_file:' >> docker-compose.yml"
+            sudo bash -c "echo '      - .env' >> docker-compose.yml"
+            sudo bash -c "echo '    restart: unless-stopped' >> docker-compose.yml"
+            sudo bash -c "echo '    healthcheck:' >> docker-compose.yml"
+            sudo bash -c "echo '      test: [\"CMD-SHELL\", \"wget -qO- http://localhost:8080/actuator/health >/dev/null 2>&1 || exit 1\"]' >> docker-compose.yml"
+            sudo bash -c "echo '      interval: 10s' >> docker-compose.yml"
+            sudo bash -c "echo '      timeout: 3s' >> docker-compose.yml"
+            sudo bash -c "echo '      retries: 5' >> docker-compose.yml"
+            sudo bash -c "echo '      start_period: 15s' >> docker-compose.yml"
+          fi
 
           docker login -u "\$REG_USER" -p "\$REG_TOKEN"
           docker compose pull
