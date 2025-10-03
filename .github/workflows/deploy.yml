@@ -2,7 +2,7 @@ name: build-and-deploy
 
 on:
   push:
-    branches: [ "main" , "production"]
+    branches: [ "main", "production" ]
 
 jobs:
   docker-build-and-push:
@@ -24,10 +24,8 @@ jobs:
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Build & Push image
         uses: docker/build-push-action@v6
         with:
@@ -70,33 +68,33 @@ jobs:
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
 
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$APP_PORT" <<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$APP_PORT" <<EOS
           set -euo pipefail
-          IMAGE="$1"
-          REG_USER="$2"
-          REG_TOKEN="$3"
-          APP_PORT="$4"
+          IMAGE="\$1"
+          REG_USER="\$2"
+          REG_TOKEN="\$3"
+          APP_PORT="\$4"
 
           sudo mkdir -p /opt/chat-ws
           cd /opt/chat-ws
 
-          sudo bash -c 'cat > .env' <<'ENVEOF'
-DOCKER_IMAGE=${IMAGE}
-SPRING_PROFILES_ACTIVE=prod
-REDIS_HOST=${REDIS_HOST}
-REDIS_PORT=${REDIS_PORT}
-REDIS_PASSWORD=${REDIS_PASSWORD}
-APP_PORT=${APP_PORT}
-# WS_ENDPOINT=${{ secrets.WS_ENDPOINT }}
-ENVEOF
+          # .env 파일 한 줄씩 echo로 생성 (중첩 heredoc 절대 사용하지 말기)
+          sudo bash -c "echo DOCKER_IMAGE=\${IMAGE} > .env"
+          sudo bash -c "echo SPRING_PROFILES_ACTIVE=prod >> .env"
+          sudo bash -c "echo REDIS_HOST=localhost >> .env"
+          sudo bash -c "echo REDIS_PORT=6379 >> .env"
+          sudo bash -c "echo REDIS_PASSWORD=secret >> .env"
+          sudo bash -c "echo APP_PORT=\${APP_PORT} >> .env"
+          sudo bash -c "echo WS_ENDPOINT=ws://localhost:8080 >> .env"
+
           sudo chmod 600 .env
           sudo chown root:root .env
-  
+
           if [ ! -f docker-compose.yml ]; then
-            sudo bash -c 'cat > docker-compose.yml' <<'YML'
+            sudo bash -c 'cat > docker-compose.yml' <<YML
 services:
   chat-ws:
-    image: ${DOCKER_IMAGE}
+    image: \${DOCKER_IMAGE}
     ports:
       - "${APP_PORT:-8080}:8080"
     env_file:
@@ -109,10 +107,10 @@ services:
       retries: 5
       start_period: 15s
 YML
-fi
-  
-  docker login -u "$REG_USER" -p "$REG_TOKEN"
-  docker compose pull
-  docker compose up -d
-  docker compose ps
-  EOS
+            fi
+
+          docker login -u "\$REG_USER" -p "\$REG_TOKEN"
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+          EOS
