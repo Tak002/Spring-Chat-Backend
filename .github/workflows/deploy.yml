@@ -79,12 +79,12 @@ jobs:
           WS_ENDPOINT="${6:-ws://localhost:8080}"
 
           sudo mkdir -p /opt/chat-ws
-          sudo chmod 644 /opt/chat-ws/.env
+          sudo chown -R $USER:$USER /opt/chat-ws
           cd /opt/chat-ws
-
+          
           # .env 파일 생성: 기존 파일 있으면 삭제 후 생성
           sudo rm -f .env
-          sudo chmod 644 /opt/chat-ws/.env
+
           sudo bash -c "echo DOCKER_IMAGE=\${IMAGE} > .env"
           sudo bash -c "echo SPRING_PROFILES_ACTIVE=prod >> .env"
           sudo bash -c "echo REDIS_HOST=localhost >> .env"
