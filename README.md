@@ -21,21 +21,21 @@ STOMP + Redis Pub/Sub 기반의 실시간 멀티룸 채팅 서버
 
 ---
 
-## 📦 폴더별 기능
+## 📦 모듈별 기능
 
-### 🔹 `chat-ws`
+### 🔹 `chat-ws` : 실시간 메시지 송수신
 - WebSocket 기반 실시간 메시지 송수신
 - STOMP 프로토콜 지원
 - Redis Pub/Sub을 통한 멀티 인스턴스 간 메시지 브로드캐스트
 - 클라이언트 연결 관리 (방 입장/퇴장, Heartbeat)
 
-### 🔹 `chat-auth`
+### 🔹 `chat-auth` : 로그인/토큰 발급/검증
 - 사용자 회원가입 및 로그인
 - JWT 토큰 발급 및 검증
 - 토큰 기반 세션 인증
 - 향후 OAuth2, 소셜 로그인 확장 가능
 
-### 🔹 `chat-history`
+### 🔹 `chat-history` : 대화 내용 저장 및 불러오기
 - 메시지 저장 및 조회 API
 - PostgreSQL(or MongoDB) 기반 영속성 관리
 - 채팅방 단위 대화 기록 페이징 조회
