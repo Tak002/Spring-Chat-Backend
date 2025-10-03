@@ -92,8 +92,8 @@ jobs:
           sudo bash -c "echo REDIS_PASSWORD=\${REDIS_PASSWORD} >> .env"
           sudo bash -c "echo APP_PORT=\${APP_PORT} >> .env"
           sudo bash -c "echo WS_ENDPOINT=\${WS_ENDPOINT} >> .env"
-          sudo chmod 600 .env
-          sudo chown root:root .env
+          sudo chmod 644 .env
+          sudo chown $USER:$USER .env
 
           # docker-compose.yml 파일도 echo로 한 줄씩 생성
           if [ ! -f docker-compose.yml ]; then
