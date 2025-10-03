@@ -14,3 +14,6 @@ STOMP + Redis Pub/Sub 기반의 실시간 멀티룸 채팅 서버
 ## 🔮 Planned
 - Redis Pub/Sub을 통한 분산 서버 메시지 동기화
 - JWT 인증
+- JWT 기반 WebSocket 인증 완성
+- 채팅 기록 저장 및 조회 API 추가
+- 대규모 트래픽 부하 테스트 및 최적화
