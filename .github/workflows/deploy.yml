@@ -94,23 +94,15 @@ jobs:
           sudo bash -c "echo WS_ENDPOINT=\${WS_ENDPOINT} >> .env"
           sudo chmod 644 .env
           sudo chown $USER:$USER .env
-
+          
           # docker-compose.yml 파일도 echo로 한 줄씩 생성
           if [ ! -f docker-compose.yml ]; then
             sudo bash -c "echo 'services:' > docker-compose.yml"
             sudo bash -c "echo '  chat-ws:' >> docker-compose.yml"
             sudo bash -c "echo '    image: \${DOCKER_IMAGE}' >> docker-compose.yml"
-            sudo bash -c "echo '    ports:' >> docker-compose.yml"
-            sudo bash -c "echo '      - \"\${APP_PORT:-8080}:8080\"' >> docker-compose.yml"
             sudo bash -c "echo '    env_file:' >> docker-compose.yml"
             sudo bash -c "echo '      - .env' >> docker-compose.yml"
             sudo bash -c "echo '    restart: unless-stopped' >> docker-compose.yml"
-            sudo bash -c "echo '    healthcheck:' >> docker-compose.yml"
-            sudo bash -c "echo '      test: [\"CMD-SHELL\", \"wget -qO- http://localhost:8080/actuator/health >/dev/null 2>&1 || exit 1\"]' >> docker-compose.yml"
-            sudo bash -c "echo '      interval: 10s' >> docker-compose.yml"
-            sudo bash -c "echo '      timeout: 3s' >> docker-compose.yml"
-            sudo bash -c "echo '      retries: 5' >> docker-compose.yml"
-            sudo bash -c "echo '      start_period: 15s' >> docker-compose.yml"
           fi
 
           docker login -u "$REG_USER" -p "$REG_TOKEN"
