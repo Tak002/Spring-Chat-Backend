@@ -12,7 +12,7 @@ jobs:
       - name: Inject WebSocket endpoint
         run: |
           WS_ENDPOINT="${{ secrets.WS_ENDPOINT }}"
-          FILE=./websocket/src/main/resources/static/index.html
+          FILE=./ws-chat/src/main/resources/static/index.html
           if [ -n "$WS_ENDPOINT" ]; then
             echo "Injecting WS_ENDPOINT=$WS_ENDPOINT into $FILE"
             sed -i "s|__WS_ENDPOINT__|$WS_ENDPOINT|g" "$FILE"
@@ -31,8 +31,8 @@ jobs:
       - name: Build & Push image
         uses: docker/build-push-action@v6
         with:
-          context: ./websocket
-          file: ./websocket/Dockerfile
+          context: ./ws-chat
+          file: ./ws-chat/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_IMAGE }}:latest
@@ -89,14 +89,14 @@ jobs:
           docker rm   "$CONTAINER" 2>/dev/null || true
 
           ENV_OPT=""
-          if [ -f /opt/websocket/.env ]; then
-            if [ -r /opt/websocket/.env ]; then
-              ENV_OPT="--env-file /opt/websocket/.env"
+          if [ -f /opt/ws-chat/.env ]; then
+            if [ -r /opt/ws-chat/.env ]; then
+              ENV_OPT="--env-file /opt/ws-chat/.env"
             else
-              echo "[WARN] /opt/websocket/.env exists but unreadable; running without env-file."
+              echo "[WARN] /opt/ws-chat/.env exists but unreadable; running without env-file."
             fi
           else
-            echo "[WARN] /opt/websocket/.env not found; running without env-file."
+            echo "[WARN] /opt/ws-chat/.env not found; running without env-file."
           fi
           
           docker run -d --name "$CONTAINER" \
