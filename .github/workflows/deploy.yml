@@ -89,12 +89,12 @@ jobs:
           else
             echo "[WARN] /opt/websocket/.env not found; running without env-file."
           fi
-
-          docker run -d --name "__CONTAINER__" \
-            --env-file /opt/websocket/.env \
-            --restart unless-stopped \
-            -p __APP_PORT__:8080 \
-            "__IMAGE__:latest"
           
+          docker run -d --name "$CONTAINER" \
+          $ENV_OPT \
+          --restart unless-stopped \
+          -p "$APP_PORT":8080 \
+          "$IMAGE:latest"
+              
           docker ps --filter "name=$CONTAINER"
           EOS
