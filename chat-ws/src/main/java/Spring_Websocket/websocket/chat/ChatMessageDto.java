@@ -3,10 +3,12 @@ package Spring_Websocket.websocket.chat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class ChatMessageDto {
     private String sender;
     private String content;
