@@ -73,7 +73,7 @@ jobs:
           envs: DOCKER_IMAGE,IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN
           script: |
             set -euo pipefail
-            mkdir -p /chat
+            mkdir -p /opt/chat
             cd /chat
             
             # 1) 환경변수 설정
