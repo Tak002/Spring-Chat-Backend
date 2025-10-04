@@ -54,8 +54,8 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "infra/docker-compose.prod.yml"
-          target: "/opt/chat-ws/"
-          strip_components: 1   # ★ infra/를 벗겨서 /opt/chat-ws/docker-compose.prod.yml 로 배치
+          target: "/opt/chat/"
+          strip_components: 1   # ★ infra/를 벗겨서 /opt/chat/docker-compose.prod.yml 로 배치
           overwrite: true
 
       - name: Deploy over SSH (compose pull + up)
@@ -73,8 +73,8 @@ jobs:
           envs: DOCKER_IMAGE,IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN
           script: |
             set -euo pipefail
-            mkdir -p /opt/chat-ws
-            cd /opt/chat-ws
+            mkdir -p /chat
+            cd /chat
             
             # 1) 환경변수 설정
             export DOCKER_IMAGE="${DOCKER_IMAGE}"
