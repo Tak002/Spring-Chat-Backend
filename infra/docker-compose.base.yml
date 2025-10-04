@@ -1,64 +1,59 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     environment:
       POSTGRES_DB: localDB
       POSTGRES_USER: localUser
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports: ["5432:5432"]
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1" ]
-        interval: 5s
-        timeout: 3s
-        retries: 20
+      test: ["CMD-SHELL", "pg_isready -U localUser -d localDB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    command: ["redis-server","--requirepass","${REDIS_PASSWORD:-}"]
     ports: ["6379:6379"]
-    restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "PING"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 10
+    restart: unless-stopped
 
   app-chat-ws:
-    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}   # ← 여기서 이미지를 참조
-    ports: ["8080:8080"]
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
       SPRING_DATASOURCE_USERNAME: localUser
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    ports: ["8080:8080"]
     restart: unless-stopped
 
   app-chat-history:
-    image: ${DOCKER_IMAGE:-tak002/chat-history}:${IMAGE_TAG:-latest}
-    container_name: chat-history-app
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-localDB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-localUser}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
+      SPRING_DATASOURCE_USERNAME: localUser
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-secret}
+      SPRING_DATA_REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-#    ports: [ "8081:8081" ]
+    # 포트 노출 없음 (server.port=0)
     restart: unless-stopped
-
-volumes:
-  pgdata:

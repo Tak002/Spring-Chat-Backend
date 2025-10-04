@@ -1,17 +1,16 @@
 # syntax=docker/dockerfile:1
 
 FROM eclipse-temurin:21-jdk AS build
-WORKDIR /app
-COPY . .
+WORKDIR /src
+# 루트 설정을 복사해 멀티모듈 빌드
+COPY . ./
 RUN chmod +x gradlew
-# 개발 중이면 테스트 생략 권장: -x test
-RUN ./gradlew clean bootJar --no-daemon -x test
+RUN ./gradlew :chat-ws:bootJar --no-daemon -x test
 
 FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod \
     JAVA_OPTS=""
-# 빌드 산출물 복사
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /src/chat-ws/build/libs/*.jar app.jar
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]

@@ -1,34 +1,12 @@
 services:
-  postgres:
-    ports: ["5432:5432"]
-    restart: unless-stopped
-
-  redis:
-    ports: ["6379:6379"]
-    restart: unless-stopped
-
   app-chat-ws:
-    # 레지스트리 이미지 대신 로컬 빌드 사용
     build:
-      context: ../chat-ws         # ← infra/ 기준 상대경로. base를 첫 번째 -f로 넘기는 전제
-      dockerfile: Dockerfile
-    # (선택) 빌드 결과에 태그를 붙이고 싶으면 아래 활성화
-    # image: chat-ws:dev
-    pull_policy: never             # 로컬 빌드만 사용, 원격 pull 금지
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-    ports: ["8080:8080"]
-    restart: unless-stopped
+      context: ..                # ✅ 루트
+      dockerfile: chat-ws/Dockerfile
+    pull_policy: never
 
   app-chat-history:
-    # base를 첫 번째 -f로 주는 전제(상대경로 기준: infra/ 에서 실행)
     build:
-      context: ../chat-history
-      dockerfile: Dockerfile
+      context: ..                # ✅ 루트
+      dockerfile: chat-history/Dockerfile
     pull_policy: never
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-    restart: unless-stopped
-    # 필요시 로컬 태그를 쓰고 싶다면 주석 해제
-    # image: chat-history:dev
-#    ports: [ "8081:8081" ]
