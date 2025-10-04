@@ -53,6 +53,8 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "infra/docker-compose.prod.yml"
           target: "/opt/chat-ws/"
+          strip_components: 1   # ★ infra/를 벗겨서 /opt/chat-ws/docker-compose.prod.yml 로 배치
+          overwrite: true
 
       - name: Deploy over SSH (compose pull + up)
         uses: appleboy/ssh-action@v1.0.3
