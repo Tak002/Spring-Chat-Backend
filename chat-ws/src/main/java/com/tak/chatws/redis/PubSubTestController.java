@@ -1,6 +1,6 @@
-package Spring_Websocket.websocket.redis;
+package com.tak.chatws.redis;
 
-import Spring_Websocket.websocket.chat.ChatMessageDto;
+import com.tak.chatws.chat.ChatMessageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;

@@ -1,10 +1,10 @@
-package Spring_Websocket.websocket;
+package com.tak.chatws;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class WebsocketApplicationTests {
+class ChatWsApplicationTests {
 
 	@Test
 	void contextLoads() {

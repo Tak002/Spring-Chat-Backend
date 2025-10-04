@@ -1,4 +1,4 @@
-package Spring_Websocket.websocket.chat;
+package com.tak.chatws.chat;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

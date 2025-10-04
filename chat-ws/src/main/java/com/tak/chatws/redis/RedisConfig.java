@@ -1,4 +1,4 @@
-package Spring_Websocket.websocket.redis;
+package com.tak.chatws.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

@@ -1,11 +1,9 @@
-package Spring_Websocket.websocket.redis;
+package com.tak.chatws.redis;
 
-import Spring_Websocket.websocket.chat.ChatMessageDto;
-import lombok.RequiredArgsConstructor;
+import com.tak.chatws.chat.ChatMessageDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Service;
 
 @Service

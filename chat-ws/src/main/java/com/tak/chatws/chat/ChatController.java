@@ -1,6 +1,6 @@
-package Spring_Websocket.websocket.chat;
+package com.tak.chatws.chat;
 
-import Spring_Websocket.websocket.redis.RedisPublisher;
+import com.tak.chatws.redis.RedisPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
