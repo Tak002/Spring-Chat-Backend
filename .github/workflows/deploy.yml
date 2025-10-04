@@ -105,7 +105,7 @@ jobs:
           $ENV_OPT \
           --restart unless-stopped \
           -p "$APP_PORT":8080 \
-          -e REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' \
+          -e REDIS_PASSWORD="$REDIS_PASSWORD" \
           "$IMAGE:latest"
               
           docker ps --filter "name=$CONTAINER"
