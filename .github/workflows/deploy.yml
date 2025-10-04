@@ -2,7 +2,7 @@ name: build-and-deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ,"production"]
 
 jobs:
   docker-build-and-push:
@@ -63,24 +63,26 @@ jobs:
           REG_TOKEN:  ${{ secrets.REGISTRY_TOKEN }}
           CONTAINER:  ${{ secrets.CONTAINER_NAME }}
           APP_PORT:   ${{ secrets.APP_PORT }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_HOST: ${{ secrets.PRIVATE_HOST }}
         run: |
           set -euo pipefail
           : "${PORT:=22}"
           : "${CONTAINER:=websocket-app}"
           : "${APP_PORT:=8080}"
 
-          # 이미지 레퍼런스는 소문자만 허용
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
 
-          # 값들을 인자로 넘겨 원격에서 안전하게 사용 (플레이스홀더 없음)
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" <<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" "$REDIS_PASSWORD" "$REDIS_HOST" <<'EOS'
           set -euo pipefail
           IMAGE="$1"
           REG_USER="$2"
           REG_TOKEN="$3"
           CONTAINER="$4"
           APP_PORT="$5"
+          REDIS_PASSWORD="$6"
+          REDIS_HOST="$7"
 
           docker login -u "$REG_USER" -p "$REG_TOKEN"
           docker pull "$IMAGE:latest"
@@ -103,6 +105,8 @@ jobs:
           $ENV_OPT \
           --restart unless-stopped \
           -p "$APP_PORT":8080 \
+          -e REDIS_PASSWORD="$REDIS_PASSWORD" \
+          -e SPRING_DATA_REDIS_HOST="$REDIS_HOST" \
           "$IMAGE:latest"
               
           docker ps --filter "name=$CONTAINER"
