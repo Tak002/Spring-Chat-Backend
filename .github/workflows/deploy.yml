@@ -37,6 +37,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_IMAGE }}:latest
             ${{ secrets.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha           # ← 캐시 사용
+          cache-to: type=gha,mode=max    # ← 캐시 저장(최대)
 
   deploy:
     needs: docker-build-and-push
@@ -61,19 +63,28 @@ jobs:
         env:
           DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
           IMAGE_TAG: ${{ github.sha }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: DOCKER_IMAGE,IMAGE_TAG
+          envs: DOCKER_IMAGE,IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN
           script: |
             set -euo pipefail
             mkdir -p /opt/chat-ws
             cd /opt/chat-ws
-            # 환경변수로 치환 사용 (서버의 .env는 건드리지 않음)
+            
+            # 1) 환경변수 설정
             export DOCKER_IMAGE="${DOCKER_IMAGE}"
             export IMAGE_TAG="${IMAGE_TAG}"
+            
+            # 2) 레지스트리 로그인 (기본 docker.io, GHCR이면 ghcr.io 명시)
+            : "${REGISTRY_SERVER:=docker.io}"
+            echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY_SERVER}" -u "${REGISTRY_USERNAME}" --password-stdin
+      
+            # 3) 도커 컴포즈로 서비스 배포 (postgres, redis는 재생성하지 않음)
             docker compose -f docker-compose.prod.yml up -d --no-recreate postgres redis
             docker compose -f docker-compose.prod.yml pull app-chat-ws
             docker compose -f docker-compose.prod.yml up -d --no-deps app-chat-ws
