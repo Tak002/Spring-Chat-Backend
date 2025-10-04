@@ -2,7 +2,7 @@ name: build-and-deploy
 
 on:
   push:
-    branches: [ "main", "production" ]
+    branches: [ "main" ]
 
 jobs:
   docker-build-and-push:
@@ -24,8 +24,10 @@ jobs:
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Build & Push image
         uses: docker/build-push-action@v6
         with:
@@ -50,63 +52,59 @@ jobs:
           chmod 600 "$KEY_FILE"
           echo "KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
 
-      - name: Deploy over native SSH (docker compose)
+      - name: Deploy over native SSH
         shell: bash
         env:
-          HOST: ${{ secrets.SERVER_HOST }}
-          USER: ${{ secrets.SERVER_USER }}
-          PORT: ${{ secrets.SERVER_SSH_PORT }}
-          IMAGE: ${{ secrets.DOCKER_IMAGE }}
-          REG_USER: ${{ secrets.REGISTRY_USERNAME }}
-          REG_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-          APP_PORT: ${{ secrets.APP_PORT }}
+          HOST:       ${{ secrets.SERVER_HOST }}
+          USER:       ${{ secrets.SERVER_USER }}
+          PORT:       ${{ secrets.SERVER_SSH_PORT }}
+          IMAGE:      ${{ secrets.DOCKER_IMAGE }}
+          REG_USER:   ${{ secrets.REGISTRY_USERNAME }}
+          REG_TOKEN:  ${{ secrets.REGISTRY_TOKEN }}
+          CONTAINER:  ${{ secrets.CONTAINER_NAME }}
+          APP_PORT:   ${{ secrets.APP_PORT }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-          WS_ENDPOINT: ${{ secrets.WS_ENDPOINT }}
         run: |
           set -euo pipefail
           : "${PORT:=22}"
+          : "${CONTAINER:=websocket-app}"
           : "${APP_PORT:=8080}"
+
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
-          # 반드시 인자 개수를 맞춰서 넘겨줌
+
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "${IMAGE_LC:-}" "${REG_USER:-}" "${REG_TOKEN:-}" "${APP_PORT:-}" "${REDIS_PASSWORD:-}" "${WS_ENDPOINT:-}" <<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" "$REDIS_PASSWORD" <<'EOS'
           set -euo pipefail
-          IMAGE="${1:-}"
-          REG_USER="${2:-}"
-          REG_TOKEN="${3:-}"
-          APP_PORT="${4:-8080}"
-          REDIS_PASSWORD="${5:-}"
-          WS_ENDPOINT="${6:-ws://localhost:8080}"
-
-          sudo mkdir -p /opt/chat-ws
-          sudo chown -R $USER:$USER /opt/chat-ws
-          cd /opt/chat-ws
-          
-          # .env 파일 생성: 기존 파일 있으면 삭제 후 생성
-          sudo rm -f .env
-
-          sudo bash -c "echo DOCKER_IMAGE=\${IMAGE} > .env"
-          sudo bash -c "echo SPRING_PROFILES_ACTIVE=prod >> .env"
-          sudo bash -c "echo REDIS_HOST=localhost >> .env"
-          sudo bash -c "echo REDIS_PORT=6379 >> .env"
-          sudo bash -c "echo REDIS_PASSWORD=\${REDIS_PASSWORD} >> .env"
-          sudo bash -c "echo APP_PORT=\${APP_PORT} >> .env"
-          sudo bash -c "echo WS_ENDPOINT=\${WS_ENDPOINT} >> .env"
-          sudo chmod 644 .env
-          sudo chown $USER:$USER .env
-          
-          # docker-compose.yml 파일도 echo로 한 줄씩 생성
-          if [ ! -f docker-compose.yml ]; then
-            sudo bash -c "echo 'services:' > docker-compose.yml"
-            sudo bash -c "echo '  chat-ws:' >> docker-compose.yml"
-            sudo bash -c "echo '    image: \${DOCKER_IMAGE}' >> docker-compose.yml"
-            sudo bash -c "echo '    env_file:' >> docker-compose.yml"
-            sudo bash -c "echo '      - .env' >> docker-compose.yml"
-            sudo bash -c "echo '    restart: unless-stopped' >> docker-compose.yml"
-          fi
+          IMAGE="$1"
+          REG_USER="$2"
+          REG_TOKEN="$3"
+          CONTAINER="$4"
+          APP_PORT="$5"
+          REDIS_PASSWORD="$6"
 
           docker login -u "$REG_USER" -p "$REG_TOKEN"
-          docker compose pull
-          docker compose up -d
-          docker compose ps
+          docker pull "$IMAGE:latest"
+
+          docker stop "$CONTAINER" 2>/dev/null || true
+          docker rm   "$CONTAINER" 2>/dev/null || true
+
+          ENV_OPT=""
+          if [ -f /opt/chat-ws/.env ]; then
+            if [ -r /opt/chat-ws/.env ]; then
+              ENV_OPT="--env-file /opt/chat-ws/.env"
+            else
+              echo "[WARN] /opt/chat-ws/.env exists but unreadable; running without env-file."
+            fi
+          else
+            echo "[WARN] /opt/chat-ws/.env not found; running without env-file."
+          fi
+          
+          docker run -d --name "$CONTAINER" \
+          $ENV_OPT \
+          --restart unless-stopped \
+          -p "$APP_PORT":8080 \
+          -e REDIS_PASSWORD="$REDIS_PASSWORD" \
+          "$IMAGE:latest"
+              
+          docker ps --filter "name=$CONTAINER"
           EOS
