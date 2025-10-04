@@ -1,14 +1,17 @@
-# 1단계: 빌드 환경 (JDK 포함)
+# syntax=docker/dockerfile:1
+
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
-# 프로젝트 전체를 컨테이너 안으로 복사
 COPY . .
 RUN chmod +x gradlew
-RUN ./gradlew clean bootJar --no-daemon # gradlew로 스프링부트 실행 가능한 jar 파일 생성
+# 개발 중이면 테스트 생략 권장: -x test
+RUN ./gradlew clean bootJar --no-daemon -x test
 
-# 2단계: 실행 환경 (JRE만 포함 → 더 가볍게)
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENV SPRING_PROFILES_ACTIVE=prod \
+    JAVA_OPTS=""
+# 빌드 산출물 복사
+COPY --from=build /app/build/libs/*.jar app.jar
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]

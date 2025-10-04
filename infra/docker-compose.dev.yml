@@ -1,14 +1,32 @@
 services:
+  postgres:
+    ports: ["5432:5432"]
+    restart: unless-stopped
+
+  redis:
+    ports: ["6379:6379"]
+    restart: unless-stopped
+
   app-chat-ws:
-    # 빌드/이미지 대신 소스 마운트 + dev 실행
-    volumes:
-      - ./chat-ws:/app
-    working_dir: /app
-    command: ./gradlew bootRun
+    # 레지스트리 이미지 대신 로컬 빌드 사용
+    build:
+      context: ../chat-ws         # ← infra/ 기준 상대경로. base를 첫 번째 -f로 넘기는 전제
+      dockerfile: Dockerfile
+    # (선택) 빌드 결과에 태그를 붙이고 싶으면 아래 활성화
+    # image: chat-ws:dev
+    pull_policy: never             # 로컬 빌드만 사용, 원격 pull 금지
     environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
-      SPRING_DATASOURCE_USERNAME: localUser
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_PROFILES_ACTIVE: dev
+    ports: ["8080:8080"]
+    restart: unless-stopped
+
+  # (선택) chat-history도 로컬 빌드로 쓰려면 아래 주석 해제
+  # app-chat-history:
+  #   build:
+  #     context: ../chat-history
+  #     dockerfile: Dockerfile
+  #   pull_policy: never
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: dev
+  #   ports: ["8081:8081"]
+  #   restart: unless-stopped

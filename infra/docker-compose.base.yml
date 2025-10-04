@@ -4,9 +4,8 @@ services:
     environment:
       POSTGRES_DB: localDB
       POSTGRES_USER: localUser
-      POSTGRES_PASSWORD: secret
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,25 +17,21 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    ports: ["6379:6379"]
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 20
-    restart: unless-stopped
 
   app-chat-ws:
-    build:
-      context: ../chat-ws   # Spring 프로젝트 폴더 경로
-      dockerfile: ../chat-ws/Dockerfile
-    ports:
-      - "8080:8080"
+    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}   # ← 여기서 이미지를 참조
+    ports: ["8080:8080"]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
       SPRING_DATASOURCE_USERNAME: localUser
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
     depends_on:

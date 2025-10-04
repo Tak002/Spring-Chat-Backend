@@ -1,46 +1,14 @@
-# infra/docker-compose.prod.yml
 services:
   postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: localDB
-      POSTGRES_USER: localUser
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports: ["5432:5432"]
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
 
   redis:
-    image: redis:7-alpine
     ports: ["6379:6379"]
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
 
   app-chat-ws:
-    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}   # ← 여기서 이미지를 참조
+    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}
     ports: ["8080:8080"]
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
-      SPRING_DATASOURCE_USERNAME: localUser
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    pull_policy: always
     restart: unless-stopped
-
-volumes:
-  pgdata:

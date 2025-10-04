@@ -1,3 +1,9 @@
 .git
-build
-.gradle
+**/.git
+**/.gradle
+**/build
+**/out
+*.iml
+*.log
+Dockerfile
+docker-compose*.yml
