@@ -17,6 +17,6 @@ public class ChatController {
         // 메시지 처리 로직
 //        System.out.println("ChatMessageDto = " + chatMessageDto);
         redisPublisher.publish(chatMessageDto);
-        template.convertAndSend("/topic/" + roomId, chatMessageDto);
+//        template.convertAndSend("/topic/" + roomId, chatMessageDto);
     }
 }
