@@ -15,8 +15,13 @@ public class RedisPublisher {
     private final ChannelTopic topic;
     private final RedisTemplate<Object, Object> redisTemplate;
 
+    public RedisPublisher(ChannelTopic topic, RedisTemplate<Object, Object> redisTemplate) {
+        this.topic = topic;
+        this.redisTemplate = redisTemplate;
+        this.redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
+    }
+
     public void publish(ChatMessageDto message) {
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
         redisTemplate.convertAndSend(topic.getTopic(), message);
     }
 }
