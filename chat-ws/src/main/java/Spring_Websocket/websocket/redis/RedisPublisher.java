@@ -9,7 +9,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class RedisPublisher {
 
     private final ChannelTopic topic;
