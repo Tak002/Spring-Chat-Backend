@@ -74,7 +74,7 @@ jobs:
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
 
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" "$REDIS_PASSWORD" "$REDIS_HOST"<<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" "$REDIS_PASSWORD" "$REDIS_HOST" <<'EOS'
           set -euo pipefail
           IMAGE="$1"
           REG_USER="$2"
