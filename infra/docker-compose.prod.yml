@@ -27,7 +27,7 @@ services:
       retries: 20
 
   app-chat-ws:
-    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}   # ← 여기서 이미지를 참조
+    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}   # ← 여기서 이미지를 참조
     ports: ["8080:8080"]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
