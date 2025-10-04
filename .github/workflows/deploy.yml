@@ -52,67 +52,61 @@ jobs:
           chmod 600 "$KEY_FILE"
           echo "KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
 
-      - name: Deploy over native SSH (docker compose)
+      - name: Deploy over native SSH
         shell: bash
         env:
-          HOST:         ${{ secrets.SERVER_HOST }}
-          USER:         ${{ secrets.SERVER_USER }}
-          PORT:         ${{ secrets.SERVER_SSH_PORT }}
-          IMAGE:        ${{ secrets.DOCKER_IMAGE }}
-          REG_USER:     ${{ secrets.REGISTRY_USERNAME }}
-          REG_TOKEN:    ${{ secrets.REGISTRY_TOKEN }}
-          APP_PORT:     ${{ secrets.APP_PORT }}
+          HOST:       ${{ secrets.SERVER_HOST }}
+          USER:       ${{ secrets.SERVER_USER }}
+          PORT:       ${{ secrets.SERVER_SSH_PORT }}
+          IMAGE:      ${{ secrets.DOCKER_IMAGE }}
+          REG_USER:   ${{ secrets.REGISTRY_USERNAME }}
+          REG_TOKEN:  ${{ secrets.REGISTRY_TOKEN }}
+          CONTAINER:  ${{ secrets.CONTAINER_NAME }}
+          APP_PORT:   ${{ secrets.APP_PORT }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           set -euo pipefail
           : "${PORT:=22}"
+          : "${CONTAINER:=websocket-app}"
           : "${APP_PORT:=8080}"
 
+          # 이미지 레퍼런스는 소문자만 허용
           IMAGE_LC="$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')"
 
+          # 값들을 인자로 넘겨 원격에서 안전하게 사용 (플레이스홀더 없음)
           ssh -i "$KEY_FILE" -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" \
-            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$APP_PORT" <<'EOS'
+            bash -s -- "$IMAGE_LC" "$REG_USER" "$REG_TOKEN" "$CONTAINER" "$APP_PORT" "$REDIS_PASSWORD" <<'EOS'
           set -euo pipefail
           IMAGE="$1"
           REG_USER="$2"
           REG_TOKEN="$3"
-          APP_PORT="$4"
+          CONTAINER="$4"
+          APP_PORT="$5"
+          REDIS_PASSWORD="$6"
 
-          sudo mkdir -p /opt/chat-ws
-          cd /opt/chat-ws
+          docker login -u "$REG_USER" -p "$REG_TOKEN"
+          docker pull "$IMAGE:latest"
 
-          sudo bash -c 'cat > .env' <<'ENVEOF'
-  DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}:latest
-  SPRING_PROFILES_ACTIVE=prod
-  REDIS_HOST=${{ secrets.REDIS_HOST }}
-  REDIS_PORT=${{ secrets.REDIS_PORT }}
-  REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-  APP_PORT=${{ secrets.APP_PORT }}
-  # WS_ENDPOINT=${{ secrets.WS_ENDPOINT }}
-  ENVEOF
-  sudo chmod 600 .env
-  sudo chown root:root .env
-  
-  if [ ! -f docker-compose.yml ]; then
-  sudo bash -c 'cat > docker-compose.yml' <<'YML'
-services:
-  chat-ws:
-    image: ${DOCKER_IMAGE}
-    ports:
-      - "${APP_PORT:-8080}:8080"
-    env_file:
-      - .env
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 15s
-  YML
-  fi
-  
-  docker login -u "$REG_USER" -p "$REG_TOKEN"
-  docker compose pull
-  docker compose up -d
-  docker compose ps
-  EOS
+          docker stop "$CONTAINER" 2>/dev/null || true
+          docker rm   "$CONTAINER" 2>/dev/null || true
+
+          ENV_OPT=""
+          if [ -f /opt/chat-ws/.env ]; then
+            if [ -r /opt/chat-ws/.env ]; then
+              ENV_OPT="--env-file /opt/chat-ws/.env"
+            else
+              echo "[WARN] /opt/chat-ws/.env exists but unreadable; running without env-file."
+            fi
+          else
+            echo "[WARN] /opt/chat-ws/.env not found; running without env-file."
+          fi
+          
+          docker run -d --name "$CONTAINER" \
+          $ENV_OPT \
+          --restart unless-stopped \
+          -p "$APP_PORT":8080 \
+          -e REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' \
+          "$IMAGE:latest"
+              
+          docker ps --filter "name=$CONTAINER"
+          EOS
