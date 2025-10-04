@@ -20,12 +20,15 @@ services:
     ports: ["8080:8080"]
     restart: unless-stopped
 
- app-chat-history:
-   build:
-     context: ../123
-     dockerfile: Dockerfile
-   pull_policy: never
-   environment:
-     SPRING_PROFILES_ACTIVE: dev
-   ports: ["8081:8081"]
-   restart: unless-stopped
+  app-chat-history:
+    # base를 첫 번째 -f로 주는 전제(상대경로 기준: infra/ 에서 실행)
+    build:
+      context: ../chat-history
+      dockerfile: Dockerfile
+    pull_policy: never
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    restart: unless-stopped
+    # 필요시 로컬 태그를 쓰고 싶다면 주석 해제
+    # image: chat-history:dev
+#    ports: [ "8081:8081" ]

@@ -41,5 +41,24 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  app-chat-history:
+    image: ${DOCKER_IMAGE:-tak002/chat-history}:${IMAGE_TAG:-latest}
+    container_name: chat-history-app
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-localDB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-localUser}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+#    ports: [ "8081:8081" ]
+    restart: unless-stopped
+
 volumes:
   pgdata:
