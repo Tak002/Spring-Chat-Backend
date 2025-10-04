@@ -74,7 +74,7 @@ jobs:
           script: |
             set -euo pipefail
             mkdir -p /opt/chat
-            cd /chat
+            cd /opt/chat
             
             # 1) 환경변수 설정
             export DOCKER_IMAGE="${DOCKER_IMAGE}"
