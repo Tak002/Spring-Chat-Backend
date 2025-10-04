@@ -64,6 +64,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: DOCKER_IMAGE,IMAGE_TAG
           script: |
             set -euo pipefail
             mkdir -p /opt/chat-ws
