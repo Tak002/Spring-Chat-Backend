@@ -1,5 +1,5 @@
 // src/main/java/Spring_Websocket/websocket/WebSocketSessionLogger.java
-package com.tak.chatws.websocket;
+package com.tak.chat_ws.websocket;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

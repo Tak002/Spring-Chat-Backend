@@ -1,4 +1,4 @@
-package com.tak.chatws;
+package com.tak.chat_ws;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

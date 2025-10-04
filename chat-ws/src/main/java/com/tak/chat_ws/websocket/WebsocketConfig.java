@@ -1,4 +1,4 @@
-package com.tak.chatws.websocket;
+package com.tak.chat_ws.websocket;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

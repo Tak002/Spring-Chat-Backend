@@ -1,4 +1,4 @@
-package com.tak.chatws.redis;
+package com.tak.chat_ws.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

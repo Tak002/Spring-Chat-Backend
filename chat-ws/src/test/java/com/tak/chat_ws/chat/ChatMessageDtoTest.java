@@ -1,4 +1,4 @@
-package com.tak.chatws.chat;
+package com.tak.chat_ws.chat;
 
 import org.junit.jupiter.api.Test;
 

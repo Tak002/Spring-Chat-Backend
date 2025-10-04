@@ -1,6 +1,6 @@
-package com.tak.chatws.redis;
+package com.tak.chat_ws.redis;
 
-import com.tak.chatws.chat.ChatMessageDto;
+import com.tak.chat_ws.chat.ChatMessageDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class RedisSubscriber implements MessageListener {
 
             log.info("Received message: {}", chatMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+                        log.error("Error processing Redis message", e);
         }
     }
 }
