@@ -20,13 +20,12 @@ services:
     ports: ["8080:8080"]
     restart: unless-stopped
 
-  # (선택) chat-history도 로컬 빌드로 쓰려면 아래 주석 해제
-  # app-chat-history:
-  #   build:
-  #     context: ../chat-history
-  #     dockerfile: Dockerfile
-  #   pull_policy: never
-  #   environment:
-  #     SPRING_PROFILES_ACTIVE: dev
-  #   ports: ["8081:8081"]
-  #   restart: unless-stopped
+ app-chat-history:
+   build:
+     context: ../123
+     dockerfile: Dockerfile
+   pull_policy: never
+   environment:
+     SPRING_PROFILES_ACTIVE: dev
+   ports: ["8081:8081"]
+   restart: unless-stopped
