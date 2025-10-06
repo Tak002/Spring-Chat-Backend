@@ -1,0 +1,10 @@
+plugins {
+	id 'java-library'
+}
+
+dependencies {
+
+}
+
+tasks.named('jar') { enabled = true }
+tasks.matching { it.name == 'bootJar' }.configureEach { it.enabled = false }

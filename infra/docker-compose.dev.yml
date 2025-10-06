@@ -1,14 +1,12 @@
 services:
   app-chat-ws:
-    # 빌드/이미지 대신 소스 마운트 + dev 실행
-    volumes:
-      - ./chat-ws:/app
-    working_dir: /app
-    command: ./gradlew bootRun
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
-      SPRING_DATASOURCE_USERNAME: localUser
-      SPRING_DATASOURCE_PASSWORD: secret
+    build:
+      context: ..                # ✅ 루트
+      dockerfile: infra/dockerfile/chat-ws.Dockerfile
+    pull_policy: never
+
+  app-chat-history:
+    build:
+      context: ..                # ✅ 루트
+      dockerfile: infra/dockerfile/chat-history.Dockerfile
+    pull_policy: never
