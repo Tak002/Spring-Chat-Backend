@@ -55,5 +55,5 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # 포트 노출 없음 (server.port=0)
+    ports: ["8081:8081"]
     restart: unless-stopped
