@@ -1,6 +1,6 @@
 services:
   app-chat-ws:
-    image: ${DOCKER_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}
+    image: ${WS_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/localDB}
@@ -24,4 +24,5 @@ services:
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     pull_policy: always
+    ports: [ "8081:8081" ]
     restart: unless-stopped
