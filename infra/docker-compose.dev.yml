@@ -2,11 +2,11 @@ services:
   app-chat-ws:
     build:
       context: ..                # ✅ 루트
-      dockerfile: chat-ws/Dockerfile
+      dockerfile: infra/dockerfile/chat-ws.Dockerfile
     pull_policy: never
 
   app-chat-history:
     build:
       context: ..                # ✅ 루트
-      dockerfile: chat-history/Dockerfile
+      dockerfile: infra/dockerfile/chat-history.Dockerfile
     pull_policy: never
