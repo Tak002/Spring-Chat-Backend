@@ -1,4 +1,4 @@
-package com.tak.chat_ws.chat;
+package com.tak.chat_common.commonDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

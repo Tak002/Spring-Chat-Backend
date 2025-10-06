@@ -1,10 +1,18 @@
 plugins { id 'org.springframework.boot' }
 
 dependencies {
+	implementation(project(':chat-common'))
+
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// ✅ 앱 모듈: bootJar만 사용
+tasks.named('jar') { enabled = false }
+tasks.named('bootJar') {
+	enabled = true
+	archiveFileName = 'chat-ws.jar'
 }

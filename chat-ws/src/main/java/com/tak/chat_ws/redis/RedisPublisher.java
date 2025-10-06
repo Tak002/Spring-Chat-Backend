@@ -1,6 +1,6 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_ws.chat.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;

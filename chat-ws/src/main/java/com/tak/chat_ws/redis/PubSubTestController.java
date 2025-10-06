@@ -1,6 +1,6 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_ws.chat.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
