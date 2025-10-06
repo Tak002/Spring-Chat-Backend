@@ -95,7 +95,7 @@ jobs:
             export WS_IMAGE="${REGISTRY_USERNAME}/chat-ws"
             export HIST_IMAGE="${REGISTRY_USERNAME}/chat-history"
             
-            # 2) 레지스트리 로그인 (기본 docker.io, GHCR이면 ghcr.io 명시)
+            # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"
             echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY_SERVER}" -u "${REGISTRY_USERNAME}" --password-stdin
       
