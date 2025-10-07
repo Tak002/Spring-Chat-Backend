@@ -2,7 +2,7 @@ name: Auto Generate PR with Template
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]  # PR 본문 업데이트
 
 permissions:
   pull-requests: write
@@ -10,26 +10,46 @@ permissions:
   contents: read
 
 jobs:
-  create-pr:
+  create-or-update-pr:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout (event-aware)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # PR 이벤트면 head SHA를, 아니면 기본값(브랜치) 사용
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
 
-      - name: Debug gh auth (should be YOUR PAT)
+      - name: Debug gh auth (PAT)
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ 본인 PAT
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           gh --version
           gh auth status -h github.com || true
 
-      - name: Get Commit Messages and PR Template
+      - name: Compute Branch Name (event-aware)
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "name=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get Commit Messages and PR Template (event-aware)
         id: get-content
         run: |
-          COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s" || true)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            COMMITS=$(git log --pretty=format:"- %s" "${BASE_SHA}..${HEAD_SHA}" || true)
+          else
+            # push
+            git fetch origin main
+            COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s" || true)
+          fi
+
           {
             echo "commits<<EOF"
             echo "$COMMITS"
@@ -46,12 +66,12 @@ jobs:
       - name: Get Issue Title
         id: get-issue-title
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
           if [ -z "$ISSUE_NUMBER" ]; then
-            ISSUE_TITLE="${{ github.ref_name }}"
+            ISSUE_TITLE="$BRANCH_NAME"
           else
             ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
           fi
@@ -61,7 +81,7 @@ jobs:
         id: generate-body
         uses: actions/github-script@v6
         with:
-          github-token: ${{ github.token }}   # ✅ 여기서는 GITHUB_TOKEN 써도 됨 (외부 호출 아님)
+          github-token: ${{ github.token }}
           script: |
             const commitMessages = process.env.commits;
             const prTemplate = process.env.template;
@@ -95,143 +115,14 @@ jobs:
               ${commitMessages}
             `;
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
-            
-            // 재시도 로직 구현
-            const maxRetries = 3;
-            let lastError = null;
-            
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-              try {
-                console.log(`API 호출 시도 ${attempt}/${maxRetries}`);
-            
-                const response = await fetch(apiUrl, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                      temperature: 0.7,
-                      topK: 1,
-                      topP: 1,
-                      maxOutputTokens: 2048,
-                    },
-                    safetySettings: [
-                      {
-                        category: "HARM_CATEGORY_HARASSMENT",
-                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                      },
-                      {
-                        category: "HARM_CATEGORY_HATE_SPEECH",
-                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                      },
-                      {
-                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                      },
-                      {
-                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                      }
-                    ]
-                  }),
-                });
-
-                if (!response.ok) {
-                  const errorText = await response.text();
-                  const error = new Error(`API request failed: ${response.status} ${response.statusText}\nError: ${errorText}`);
-            
-                  // 429 에러 (Rate Limit)인 경우 재시도 대기
-                  if (response.status === 429 && attempt < maxRetries) {
-                    const waitTime = Math.pow(2, attempt) * 2000;
-                    console.log(`Rate limit 초과. ${waitTime}ms 후 재시도...`);
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                    lastError = error;
-                    continue;
-                  }
-            
-                  throw error;
-                }
-
-                const result = await response.json();
-            
-                // 전체 응답 로깅 (디버깅용)
-                console.log('Full Gemini Response:', JSON.stringify(result, null, 2));
-
-                // 안전한 속성 접근을 위한 검증
-                if (!result) {
-                  throw new Error('Gemini API returned null or undefined result');
-                }
-
-                // 에러 응답 처리
-                if (result.error) {
-                  throw new Error(`Gemini API returned error: ${JSON.stringify(result.error)}`);
-                }
-
-                // candidates 배열 검증
-                if (!result.candidates || !Array.isArray(result.candidates) || result.candidates.length === 0) {
-                  throw new Error(`Gemini API returned no candidates. This might be due to safety settings or content filtering.\nFull response: ${JSON.stringify(result)}`);
-                }
-
-                // 첫 번째 후보의 구조 검증
-                const candidate = result.candidates[0];
-                if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-                  throw new Error(`Invalid candidate structure in Gemini response.\nCandidate: ${JSON.stringify(candidate)}`);
-                }
-
-                // 안전하게 텍스트 추출
-                let aiResponse = candidate.content.parts[0].text;
-                if (!aiResponse || typeof aiResponse !== 'string') {
-                  throw new Error(`Invalid or empty text response from Gemini.\nParts: ${JSON.stringify(candidate.content.parts)}`);
-                }
-
-                // 응답 검증 - 최소 길이 확인
-                if (aiResponse.length < 100) {
-                  throw new Error(`Generated response is too short (${aiResponse.length} characters). This might indicate an incomplete response.`);
-                }
-
-                aiResponse = aiResponse.replace(/^```markdown\n/, '').replace(/\n```$/, '');
-                console.log('Generated PR body length:', aiResponse.length);
-                console.log('Generated PR body preview:', aiResponse.substring(0, 200) + '...');
-            
-                // 출력 설정 전에 잠시 대기
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            
-                core.setOutput('body', aiResponse);
-                console.log('PR body successfully set to output');
-                return; // 성공 시 함수 종료
-
-              } catch (error) {
-                lastError = error;
-                console.log(`시도 ${attempt} 실패:`, error.message);
-            
-                if (attempt === maxRetries) {
-                  break; // 마지막 시도면 루프 종료
-                }
-            
-                // 마지막 시도가 아니면 잠시 대기
-                const waitTime = 2000 * attempt; // 대기 시간 증가
-                console.log(`${waitTime}ms 후 재시도...`);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-              }
-            }
-            
-            // 모든 재시도 실패 시 에러 발생
-            core.setFailed(`모든 API 호출 시도 실패: ${lastError?.message || '알 수 없는 오류'}`);
-            return;
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        timeout-minutes: 10
-
-      # ⬇⬇ 핵심: 기존 PR 존재 여부 확인
-      - name: Find existing PR for this branch
+      # --------- PR 생성: push 이벤트에서만 ---------
+      - name: Find existing PR for this branch (push only)
+        if: ${{ github.event_name == 'push' }}
         id: find-pr
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          BR="${{ github.ref_name }}"
+          BR="${{ steps.branch.outputs.name }}"
           NUM=$(gh pr list \
             --repo "${{ github.repository }}" \
             --head "$BR" \
@@ -245,28 +136,27 @@ jobs:
             echo "No open PR for $BR"
           fi
 
-      # ⬇ PR 없으면 생성
-      - name: Create Pull Request (only if not exists)
-        if: ${{ steps.find-pr.outputs.number == '' && github.ref_name != 'main' }}
+      - name: Create Pull Request (push only, if not exists)
+        if: ${{ github.event_name == 'push' && steps.find-pr.outputs.number == '' }}
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT (작성자=본인)
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_BODY: ${{ steps.generate-body.outputs.body }}
         run: |
           gh pr create \
             --repo "${{ github.repository }}" \
             --base main \
-            --head "${{ github.ref_name }}" \
+            --head "${{ steps.branch.outputs.name }}" \
             --title "${{ steps.get-issue-title.outputs.title }}" \
             --body "$PR_BODY" \
             --assignee "${{ github.actor }}"
 
-      # ⬇ PR 있으면 본문만 업데이트(옵션 B)
-      - name: Update PR body if exists
-        if: ${{ steps.find-pr.outputs.number != '' }}
+      # --------- PR 본문 업데이트: PR 이벤트에서만 ---------
+      - name: Update PR body (pull_request only)
+        if: ${{ github.event_name == 'pull_request' }}
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT (편집자=본인)
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_BODY: ${{ steps.generate-body.outputs.body }}
         run: |
-          gh pr edit "${{ steps.find-pr.outputs.number }}" \
+          gh pr edit "${{ github.event.pull_request.number }}" \
             --repo "${{ github.repository }}" \
             --body "$PR_BODY"
