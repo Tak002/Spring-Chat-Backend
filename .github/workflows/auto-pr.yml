@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout (event-aware)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           # PR 이벤트면 head SHA를, 아니면 기본값(브랜치) 사용
@@ -79,7 +79,7 @@ jobs:
 
       - name: Generate PR Body with AI
         id: generate-body
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           github-token: ${{ github.token }}
           script: |
@@ -114,6 +114,135 @@ jobs:
               --- 커밋 메시지 목록 ---
               ${commitMessages}
             `;
+              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+              
+              // 재시도 로직 구현
+              const maxRetries = 3;
+              let lastError = null;
+              
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+              try {
+              console.log(`API 호출 시도 ${attempt}/${maxRetries}`);
+              
+              const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                topK: 1,
+                topP: 1,
+                maxOutputTokens: 2048,
+              },
+              safetySettings: [
+                {
+                  category: "HARM_CATEGORY_HARASSMENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_HATE_SPEECH",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                }
+              ]
+            }),
+            });
+              
+              if (!response.ok) {
+              const errorText = await response.text();
+            const error = new Error(`API request failed: ${response.status} ${response.statusText}\nError: ${errorText}`);
+              
+              // 429 에러 (Rate Limit)인 경우 재시도 대기
+              if (response.status === 429 && attempt < maxRetries) {
+              const waitTime = Math.pow(2, attempt) * 2000;
+              console.log(`Rate limit 초과. ${waitTime}ms 후 재시도...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+              lastError = error;
+              continue;
+            }
+              
+              throw error;
+            }
+              
+              const result = await response.json();
+              
+              // 전체 응답 로깅 (디버깅용)
+              console.log('Full Gemini Response:', JSON.stringify(result, null, 2));
+              
+              // 안전한 속성 접근을 위한 검증
+              if (!result) {
+              throw new Error('Gemini API returned null or undefined result');
+            }
+              
+              // 에러 응답 처리
+              if (result.error) {
+            throw new Error(`Gemini API returned error: ${JSON.stringify(result.error)}`);
+            }
+              
+              // candidates 배열 검증
+              if (!result.candidates || !Array.isArray(result.candidates) || result.candidates.length === 0) {
+            throw new Error(`Gemini API returned no candidates. This might be due to safety settings or content filtering.\nFull response: ${JSON.stringify(result)}`);
+            }
+              
+              // 첫 번째 후보의 구조 검증
+              const candidate = result.candidates[0];
+              if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+            throw new Error(`Invalid candidate structure in Gemini response.\nCandidate: ${JSON.stringify(candidate)}`);
+            }
+              
+              // 안전하게 텍스트 추출
+              let aiResponse = candidate.content.parts[0].text;
+              if (!aiResponse || typeof aiResponse !== 'string') {
+            throw new Error(`Invalid or empty text response from Gemini.\nParts: ${JSON.stringify(candidate.content.parts)}`);
+            }
+              
+              // 응답 검증 - 최소 길이 확인
+              if (aiResponse.length < 100) {
+              throw new Error(`Generated response is too short (${aiResponse.length} characters). This might indicate an incomplete response.`);
+            }
+              
+              aiResponse = aiResponse.replace(/^```markdown\n/, '').replace(/\n```$/, '');
+              console.log('Generated PR body length:', aiResponse.length);
+              console.log('Generated PR body preview:', aiResponse.substring(0, 200) + '...');
+              
+              // 출력 설정 전에 잠시 대기
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              core.setOutput('body', aiResponse);
+              console.log('PR body successfully set to output');
+              return; // 성공 시 함수 종료
+            
+            } catch (error) {
+              lastError = error;
+              console.log(`시도 ${attempt} 실패:`, error.message);
+              
+              if (attempt === maxRetries) {
+              break; // 마지막 시도면 루프 종료
+            }
+              
+              // 마지막 시도가 아니면 잠시 대기
+              const waitTime = 2000 * attempt; // 대기 시간 증가
+              console.log(`${waitTime}ms 후 재시도...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+            }
+              
+              // 모든 재시도 실패 시 에러 발생
+            core.setFailed(`모든 API 호출 시도 실패: ${lastError?.message || '알 수 없는 오류'}`);
+              return;
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        timeout-minutes: 10
 
       # --------- PR 생성: push 이벤트에서만 ---------
       - name: Find existing PR for this branch (push only)
