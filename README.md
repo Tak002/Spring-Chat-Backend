@@ -6,6 +6,7 @@ STOMP + Redis Pub/Sub 기반의 실시간 멀티룸 채팅 서버
 
 ## 🖼️ Demo
 <img width="1815" height="671" alt="스크린샷 2025-10-08 031804" src="https://github.com/user-attachments/assets/1789bc2f-7a7a-48c9-9b85-085fae18414f" />
+
 ## ✨ Features
 - STOMP 기반 멀티룸 실시간 채팅
 - Docker + GitHub Actions 기반 자동 배포
