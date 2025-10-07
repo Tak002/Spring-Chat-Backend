@@ -33,8 +33,8 @@ jobs:
             echo "[WARN] WS_API_BASE not set; keeping default (localhost)."
           fi
           if [ -n "HIS_API_BASE" ]; then
-            echo "Injecting WS_API_BASE=HIS_API_BASE into $FILE"
-            sed -i "s|__WS_API_BASE__|HIS_API_BASE|g" "$FILE"
+            echo "Injecting HIS_API_BASE=HIS_API_BASE into $FILE"
+            sed -i "s|__HIS_API_BASE__|HIS_API_BASE|g" "$FILE"
           else
             echo "[WARN] HIS_API_BASE not set; keeping default (localhost)."
           fi
