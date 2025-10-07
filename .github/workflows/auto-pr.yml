@@ -2,7 +2,7 @@ name: Auto Generate PR with Template
 
 on:
   push:
-    branches: [ "**" ] # 모든 브랜치에 대해 동작하도록 변경
+    branches: [ "**" ]
 
 jobs:
   create-pr:
@@ -19,25 +19,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Check if PR already exists
-        id: check_pr
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
-          echo "Checking if PR exists for branch: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          
-          if gh pr view "${{ github.ref_name }}" --json number >/dev/null 2>&1; then
-            echo "PR already exists for this branch. Skipping."
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "No PR found. Proceeding to create one."
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Get Commit Messages and PR Template
-        if: steps.check_pr.outputs.exists == 'false'
         id: get-content
         run: |
           COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s")
@@ -51,28 +33,22 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Get Issue Title
-        if: steps.check_pr.outputs.exists == 'false'
         id: get-issue-title
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
-          # 'feat#123-description' 같은 브랜치 이름에서 숫자 '123'만 추출
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
-          
+
           if [ -z "$ISSUE_NUMBER" ]; then
-            echo "브랜치 이름에서 이슈 번호를 찾을 수 없습니다."
-            # 이슈 번호가 없으면, 브랜치 이름을 기반으로 제목 생성
             ISSUE_TITLE="${{ github.ref_name }}"
           else
-            # GitHub CLI를 사용해서 이슈 제목을 가져와
             ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
           fi
-          
+
           echo "title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
 
       - name: Generate PR Body with AI
-        if: steps.check_pr.outputs.exists == 'false'
         id: generate-body
         uses: actions/github-script@v6
         with:
@@ -238,53 +214,45 @@ jobs:
             return;
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        timeout-minutes: 10 # 타임아웃 시간 증가
+        timeout-minutes: 10
 
       - name: Create Pull Request
-        if: steps.check_pr.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_BODY: ${{ steps.generate-body.outputs.body }}
         run: |
-          # PR body가 비어있는지 확인
           if [ -z "$PR_BODY" ]; then
             echo "Error: PR body is empty. Skipping PR creation."
             exit 1
           fi
-          
+
           echo "PR body length: ${#PR_BODY}"
           echo "PR body preview: ${PR_BODY:0:200}..."
-          
-          # 재시도 로직으로 PR 생성
+
           max_attempts=3
           for attempt in $(seq 1 $max_attempts); do
             echo "PR 생성 시도 $attempt/$max_attempts"
-          
-            # 잠시 대기 (점진적으로 증가)
             wait_time=$((attempt * 5))
             echo "대기 시간: ${wait_time}초"
             sleep $wait_time
-          
-            # GitHub API 상태 확인
-            echo "GitHub API 상태 확인 중..."
+
             if ! gh api rate-limit > /dev/null 2>&1; then
               echo "GitHub API 연결 문제. 재시도 중..."
               continue
             fi
-          
-            # PR 생성 시도
+
             if gh pr create \
               --base main \
               --head ${{ github.ref_name }} \
               --title "${{ github.ref_name }}" \
               --body "$PR_BODY" \
               --assignee ${{ github.actor }}; then
-          
+
               echo "Pull Request created successfully!"
               break
             else
               echo "PR 생성 실패 (시도 $attempt/$max_attempts)"
-          
+
               if [ $attempt -eq $max_attempts ]; then
                 echo "모든 PR 생성 시도 실패. 수동으로 PR을 생성해주세요."
                 echo "브랜치: ${{ github.ref_name }}"
