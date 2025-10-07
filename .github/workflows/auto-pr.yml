@@ -2,7 +2,7 @@ name: Auto Generate PR with Template
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ "**" ] # 모든 브랜치에 대해 동작하도록 변경
 
 jobs:
   create-pr:
