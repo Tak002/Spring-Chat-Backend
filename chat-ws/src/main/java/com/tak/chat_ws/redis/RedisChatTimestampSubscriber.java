@@ -1,7 +1,8 @@
 package com.tak.chat_ws.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tak.chat_common.commonDto.ChatMessageSendDto;
+import com.tak.chat_common.commonDto.pubsub.ChatTimestampPubSubDto;
+import com.tak.chat_common.commonDto.receive.ChatTimestampReceiveDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -12,24 +13,22 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RedisSubscriber implements MessageListener {
+public class RedisChatTimestampSubscriber implements MessageListener {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate template;
+
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            // Redis에서 온 메시지를 문자열로 변환
             String body = new String(message.getBody());
+            ChatTimestampPubSubDto timestamp = objectMapper.readValue(body, ChatTimestampPubSubDto.class);
 
-            // 문자열(JSON)을 ChatMessage로 변환
-            ChatMessageSendDto chatMessage = objectMapper.readValue(body, ChatMessageSendDto.class);
-            String roomId = chatMessage.getRoomId();
-            template.convertAndSend("/topic/" + roomId, chatMessage);
+            template.convertAndSend("/topic/" + timestamp.getRoomId(), ChatTimestampReceiveDto.from(timestamp));
 
-            log.info("Received message: {}", chatMessage);
+            log.info("Received timestamp: {}", timestamp);
         } catch (Exception e) {
-                        log.error("Error processing Redis message", e);
+            log.error("Error processing Redis message", e);
         }
     }
 }

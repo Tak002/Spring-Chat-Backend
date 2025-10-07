@@ -1,7 +1,7 @@
 package com.tak.chat_history.chatMessage;
 
-import com.tak.chat_common.commonDto.ChatMessageReceiveDto;
-import com.tak.chat_common.commonDto.ChatMessagesReceiveDto;
+import com.tak.chat_common.commonDto.receive.ChatMessageReceiveDto;
+import com.tak.chat_common.commonDto.receive.ChatMessagesReceiveDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

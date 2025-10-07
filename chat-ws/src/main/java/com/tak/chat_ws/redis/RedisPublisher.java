@@ -1,6 +1,7 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_common.commonDto.ChatMessageSendDto;
+import com.tak.chat_common.commonDto.pubsub.ChatMessagePubSubDto;
+import com.tak.chat_common.commonDto.send.ChatMessageSendDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -10,15 +11,15 @@ import org.springframework.stereotype.Service;
 public class RedisPublisher {
 
     private final ChannelTopic topic;
-    private final RedisTemplate<Object, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    public RedisPublisher(ChannelTopic topic, RedisTemplate<Object, Object> redisTemplate) {
-        this.topic = topic;
+    public RedisPublisher(ChannelTopic chatMessageTopic, RedisTemplate<String, Object> redisTemplate) {
+        this.topic = chatMessageTopic;
         this.redisTemplate = redisTemplate;
         this.redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageSendDto.class));
     }
 
-    public void publish(ChatMessageSendDto message) {
+    public void publish(ChatMessagePubSubDto message) {
         redisTemplate.convertAndSend(topic.getTopic(), message);
     }
 }
