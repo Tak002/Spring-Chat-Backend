@@ -1,6 +1,6 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_common.commonDto.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageSendDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,7 +13,7 @@ public class PubSubTestController {
 
     @PostMapping("/publish")
     public String publishMessage(@RequestParam String sender, @RequestParam String content, @RequestParam String roomId) {
-        ChatMessageDto chat = ChatMessageDto.builder()
+        ChatMessageSendDto chat = ChatMessageSendDto.builder()
                 .sender(sender)
                 .content(content)
                 .roomId(roomId)

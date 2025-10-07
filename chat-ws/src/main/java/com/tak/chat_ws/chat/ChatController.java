@@ -1,6 +1,6 @@
 package com.tak.chat_ws.chat;
 
-import com.tak.chat_common.commonDto.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageSendDto;
 import com.tak.chat_ws.redis.RedisPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 public class ChatController {
     private final RedisPublisher redisPublisher;
     @MessageMapping("/chat/{roomId}")
-    public void sendMessage(@DestinationVariable String roomId, ChatMessageDto chatMessageDto) {
-        redisPublisher.publish(chatMessageDto);
+    public void sendMessage(@DestinationVariable String roomId, ChatMessageSendDto chatMessageSendDto) {
+        redisPublisher.publish(chatMessageSendDto);
     }
 }

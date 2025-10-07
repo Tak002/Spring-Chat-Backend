@@ -1,6 +1,6 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_common.commonDto.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageSendDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -15,10 +15,10 @@ public class RedisPublisher {
     public RedisPublisher(ChannelTopic topic, RedisTemplate<Object, Object> redisTemplate) {
         this.topic = topic;
         this.redisTemplate = redisTemplate;
-        this.redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageDto.class));
+        this.redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ChatMessageSendDto.class));
     }
 
-    public void publish(ChatMessageDto message) {
+    public void publish(ChatMessageSendDto message) {
         redisTemplate.convertAndSend(topic.getTopic(), message);
     }
 }

@@ -1,7 +1,7 @@
 package com.tak.chat_ws.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tak.chat_common.commonDto.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageSendDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -23,7 +23,7 @@ public class RedisSubscriber implements MessageListener {
             String body = new String(message.getBody());
 
             // 문자열(JSON)을 ChatMessage로 변환
-            ChatMessageDto chatMessage = objectMapper.readValue(body, ChatMessageDto.class);
+            ChatMessageSendDto chatMessage = objectMapper.readValue(body, ChatMessageSendDto.class);
             String roomId = chatMessage.getRoomId();
             template.convertAndSend("/topic/" + roomId, chatMessage);
 

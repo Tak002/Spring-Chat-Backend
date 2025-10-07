@@ -1,7 +1,7 @@
 package com.tak.chat_history.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tak.chat_common.commonDto.ChatMessageDto;
+import com.tak.chat_common.commonDto.ChatMessageSendDto;
 import com.tak.chat_history.chatMessage.ChatMessage;
 import com.tak.chat_history.chatMessage.ChatMessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class RedisSubscriber implements MessageListener {
             String body = new String(message.getBody());
 
             // 문자열(JSON)을 ChatMessage로 변환
-            ChatMessageDto chatMessage = objectMapper.readValue(body, ChatMessageDto.class);
+            ChatMessageSendDto chatMessage = objectMapper.readValue(body, ChatMessageSendDto.class);
 
             log.info("Received message: {}", chatMessage);
             chatMessageRepository.save(ChatMessage.of(chatMessage.getRoomId(), chatMessage.getSender(), chatMessage.getContent()));
