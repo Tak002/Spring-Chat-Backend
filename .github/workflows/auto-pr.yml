@@ -4,20 +4,27 @@ on:
   push:
     branches: [ "**" ]
 
+permissions:
+  pull-requests: write
+  issues: read
+  contents: read
+
 jobs:
   create-pr:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: read
-      contents: read
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # token 주입 불필요. 기본 GITHUB_TOKEN으로 OK
+
+      - name: Debug gh auth (should be YOUR PAT)
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ 본인 PAT
+        run: |
+          gh --version
+          gh auth status -h github.com || true
 
       - name: Get Commit Messages and PR Template
         id: get-content
@@ -39,7 +46,7 @@ jobs:
       - name: Get Issue Title
         id: get-issue-title
         env:
-          GH_TOKEN: ${{ github.token }}   # ✅ gh용 토큰은 이것만 주면 됨
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
@@ -54,7 +61,7 @@ jobs:
         id: generate-body
         uses: actions/github-script@v6
         with:
-          github-token: ${{ github.token }}  # ✅ 기본 토큰만
+          github-token: ${{ github.token }}   # ✅ 여기서는 GITHUB_TOKEN 써도 됨 (외부 호출 아님)
           script: |
             const commitMessages = process.env.commits;
             const prTemplate = process.env.template;
@@ -218,46 +225,48 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         timeout-minutes: 10
 
-      - name: Create Pull Request
-        if: ${{ github.ref_name != 'main' }}   # ✅ main->main PR 방지
+      # ⬇⬇ 핵심: 기존 PR 존재 여부 확인
+      - name: Find existing PR for this branch
+        id: find-pr
         env:
-          GH_TOKEN: ${{ github.token }}        # ✅ gh는 이것만 필요
-          PR_BODY: ${{ steps.generate-body.outputs.body }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT
         run: |
-          if [ -z "$PR_BODY" ]; then
-            echo "Error: PR body is empty. Skipping PR creation."
-            exit 1
+          BR="${{ github.ref_name }}"
+          NUM=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --head "$BR" \
+            --state open \
+            --json number \
+            -q '.[0].number')
+          echo "number=$NUM" >> $GITHUB_OUTPUT
+          if [ -n "$NUM" ]; then
+            echo "Found open PR #$NUM"
+          else
+            echo "No open PR for $BR"
           fi
 
-          echo "PR body length: ${#PR_BODY}"
-          echo "PR body preview: ${PR_BODY:0:200}..."
+      # ⬇ PR 없으면 생성
+      - name: Create Pull Request (only if not exists)
+        if: ${{ steps.find-pr.outputs.number == '' && github.ref_name != 'main' }}
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT (작성자=본인)
+          PR_BODY: ${{ steps.generate-body.outputs.body }}
+        run: |
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --head "${{ github.ref_name }}" \
+            --title "${{ steps.get-issue-title.outputs.title }}" \
+            --body "$PR_BODY" \
+            --assignee "${{ github.actor }}"
 
-          max_attempts=3
-          for attempt in $(seq 1 $max_attempts); do
-            echo "PR 생성 시도 $attempt/$max_attempts"
-            wait_time=$((attempt * 5))
-            echo "대기 시간: ${wait_time}초"
-            sleep $wait_time
-
-            # ✅ 인증/연결 확인 (토큰 문제면 여기서 바로 드러남)
-            if ! gh api rate-limit >/dev/null 2>&1; then
-              echo "GitHub API 인증/연결 문제. 재시도 중..."
-              continue
-            fi
-
-            if gh pr create \
-              --base main \
-              --head ${{ github.ref_name }} \
-              --title "${{ steps.get-issue-title.outputs.title }}" \
-              --body "$PR_BODY" \
-              --assignee "${{ github.actor }}"; then
-              echo "Pull Request created successfully!"
-              break
-            else
-              echo "PR 생성 실패 (시도 $attempt/$max_attempts)"
-              if [ $attempt -eq $max_attempts ]; then
-                echo "모든 PR 생성 시도 실패. 수동으로 PR을 생성해주세요."
-                exit 1
-              fi
-            fi
-          done
+      # ⬇ PR 있으면 본문만 업데이트(옵션 B)
+      - name: Update PR body if exists
+        if: ${{ steps.find-pr.outputs.number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}   # ✅ PAT (편집자=본인)
+          PR_BODY: ${{ steps.generate-body.outputs.body }}
+        run: |
+          gh pr edit "${{ steps.find-pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$PR_BODY"
