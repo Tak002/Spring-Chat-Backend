@@ -4,23 +4,40 @@ on:
   push:
     branches: [ "**" ]
 
+permissions:            # ✅ 워크플로 상단에 명시 (org 기본 정책 무시용)
+  pull-requests: write
+  issues: read
+  contents: read
+
 jobs:
   create-pr:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: read
-      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}   # ✅ gh는 이 토큰만 사용
+      GH_HOST: github.com             # ✅ 호스트 명시 (혹시 모를 엔터프라이즈/커스텀 도메인 이슈 방지)
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # 기본 GITHUB_TOKEN이면 충분. 별도 token 불필요
+
+      - name: Debug gh auth
+        run: |
+          set -xe
+          gh --version
+          # 현재 인증 상태/호스트 확인
+          gh auth status -h "$GH_HOST" || true
+          # API 호출이 실제로 가능한지 바로 확인
+          gh api rate-limit -H 'Accept: application/vnd.github+json' || true
+          # 어떤 리포를 바라보고 있는지 명시 (정보 출력용)
+          echo "Repo: $GITHUB_REPOSITORY  Ref: $GITHUB_REF  RefName: $GITHUB_REF_NAME"
 
       - name: Get Commit Messages and PR Template
         id: get-content
         run: |
+          set -e
           COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s" || true)
           {
             echo "commits<<EOF"
@@ -37,9 +54,8 @@ jobs:
 
       - name: Get Issue Title
         id: get-issue-title
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
           BRANCH_NAME="${{ github.ref_name }}"
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
           if [ -z "$ISSUE_NUMBER" ]; then
@@ -217,12 +233,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         timeout-minutes: 10
 
-      - name: Create Pull Request
-        if: ${{ github.ref_name != 'main' }}   # ✅ main->main PR 방지
+      - name: Create Pull Request (gh cli)
+        if: ${{ github.ref_name != 'main' }}
         env:
-          GH_TOKEN: ${{ github.token }}        # ✅ gh는 이것만 필요
           PR_BODY: ${{ steps.generate-body.outputs.body }}
         run: |
+          set -e
           if [ -z "$PR_BODY" ]; then
             echo "Error: PR body is empty. Skipping PR creation."
             exit 1
@@ -238,25 +254,48 @@ jobs:
             echo "대기 시간: ${wait_time}초"
             sleep $wait_time
 
-            # ✅ 인증/연결 확인 (토큰 문제면 여기서 바로 드러남)
-            if ! gh api rate-limit >/dev/null 2>&1; then
-              echo "GitHub API 인증/연결 문제. 재시도 중..."
-              continue
-            fi
-
+            # gh가 실패하면 에러 로그를 그대로 출력해서 원인 파악
             if gh pr create \
+              --repo "${{ github.repository }}" \
               --base main \
-              --head ${{ github.ref_name }} \
+              --head "${{ github.ref_name }}" \
               --title "${{ steps.get-issue-title.outputs.title }}" \
               --body "$PR_BODY" \
               --assignee "${{ github.actor }}"; then
               echo "Pull Request created successfully!"
-              break
+              exit 0
             else
-              echo "PR 생성 실패 (시도 $attempt/$max_attempts)"
+              echo "gh pr create 실패 (시도 $attempt/$max_attempts). 직전 명령의 종료코드: $?"
+              # 추가로 상태 확인
+              gh auth status -h "$GH_HOST" || true
+              gh api rate-limit -H 'Accept: application/vnd.github+json' || true
               if [ $attempt -eq $max_attempts ]; then
-                echo "모든 PR 생성 시도 실패. 수동으로 PR을 생성해주세요."
-                exit 1
+                echo "gh 경로 실패, REST API 대체 경로 시도..."
               fi
             fi
           done
+          # 여기까지 오면 gh 실패 -> REST 대체
+          echo "===> REST API로 PR 생성 시도"
+          TITLE_JSON=$(printf '%s' "${{ steps.get-issue-title.outputs.title }}" | jq -Rsa .)
+          BODY_JSON=$(printf '%s' "$PR_BODY" | jq -Rsa .)
+          DATA=$(jq -cn --arg title "$(jq -r . <<<"$TITLE_JSON")" \
+                        --arg head  "${{ github.ref_name }}" \
+                        --arg base  "main" \
+                        --arg body  "$(jq -r . <<<"$BODY_JSON")" \
+                        '{title:$title, head:$head, base:$base, body:$body}')
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls" \
+            -d "$DATA" | tee /tmp/pr_create.json
+
+          # 성공/실패 검사
+          html_url=$(jq -r '.html_url // empty' /tmp/pr_create.json)
+          if [ -n "$html_url" ]; then
+            echo "REST API로 PR 생성 성공: $html_url"
+          else
+            echo "REST API로도 PR 생성 실패"
+            echo "응답:"
+            cat /tmp/pr_create.json
+            exit 1
+          fi
