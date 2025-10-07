@@ -2,8 +2,7 @@ name: Auto Generate PR with Template
 
 on:
   push:
-    branches: [ "main" ,"production"]
-
+    branches: [ "**" ]
 
 jobs:
   create-pr:
