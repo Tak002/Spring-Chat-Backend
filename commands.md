@@ -1,189 +1,99 @@
-# Chat-WS & Chat-History — Commands Cheat Sheet
+# Chat-WS & Chat-History — Core Commands Cheat Sheet (DEV 중심)
 
-> 프로젝트 구조: 루트 Gradle, 멀티모듈(`chat-ws`, `chat-history`), `infra/`에 compose 파일( base/dev/prod )
+> 구성: 루트 Gradle 멀티모듈(`chat-ws`, `chat-history`), Compose는 `infra/docker-compose.base.yml` + `infra/docker-compose.dev.yml` 조합
 
 ---
 
-## 1) Gradle (루트에서 실행)
+## 🔝 자주 쓰는 명령
 
-### 공통
-
-* Unix/Mac: `./gradlew ...` / Windows PowerShell: `./gradlew.bat ...`
-
-### 전체 빌드 & 모듈별 JAR
+### 1) 앱만 빠르게 재배포 (JAR 선빌드 → 이미지 재빌드 → 앱만 재기동)
 
 ```bash
-./gradlew clean build -x test                              
-./gradlew :chat-ws:bootJar :chat-history:bootJar -x test
-./gradlew :chat-ws:build -x test
-./gradlew :chat-history:build -x test
+./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel app-chat-ws app-chat-history
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps app-chat-ws app-chat-history
 ```
 
-### 로컬 실행(프로필)
+* 설명: 로컬에서 JAR 생성 후, 두 앱 이미지만 재빌드·무중단 재기동.
+
+### 2) 앱만(no cache) 강제 재배포
 
 ```bash
-./gradlew clean build -x test -Dspring.profiles.active=dev                              
-```
-
-### 테스트
-
-```bash
-./gradlew test                                      # 전체 테스트
-./gradlew :chat-ws:test --tests "*SomeTestClass*"   # 특정 테스트
-```
----
-
-## 2) Docker Compose (개발: base+dev / 배포: base+prod)
-
-> 예시 파일: `infra/docker-compose.base.yml` + `infra/docker-compose.dev.yml` (또는 `prod.yml`)
-
-### 빌드
-
-```bash
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build app-chat-ws app-chat-history
-```
-```bash
-# 캐시 없이
+./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --no-cache --pull app-chat-ws app-chat-history
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps app-chat-ws app-chat-history
 ```
 
-### 의존 서비스 점검 (Redis/Postgres)
+* 설명: 캐시 무시하고 이미지 재빌드 후 앱만 교체. (의존성/레이어 꼬임 해결)
+
+### 3) 모든 서비스 한번에 시작(처음 세팅/환경 변경 후)
 
 ```bash
-# Redis, Postgres 컨테이너가 없을 때
-docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate postgres redis
+./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --build
 ```
-```bash
-# Redis PING (비번 사용 시)
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec redis redis-cli -a "$REDIS_PASSWORD" ping
-```
-```bash
-# Postgres 접속/점검
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec postgres psql -U localUser -d localDB -c '\dt'
-```
-### 기동 / 중지
 
-```bash
-# 특정 서비스만 기동
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d app-chat-ws app-chat-history
-```
-```bash
-# 전체(의존 포함) 기동
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d
-```
-```bash
-# 중지 (네트워크/볼륨 유지)
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down
-```
-```bash
-# 볼륨까지 정리 (데이터 초기화)
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down -v
-```
+* 설명: DB/Redis 포함 전부 기동(+필요 시 앱 빌드).
+
+---
+
+## 🧩 개발 편의 세트
 
 ### 상태/로그/접속
 
 ```bash
-# 상태
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml ps
-```
-```bash
-# 로그 팔로우
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml logs -f app-chat-ws app-chat-history
-```
-```bash
-# 컨테이너 쉘
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec app-chat-ws sh
 ```
-```bash
-# 환경변수 확인
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec app-chat-ws sh -lc 'printenv | sort'
-```
 
+* 설명: 서비스 상태/로그 팔로우/컨테이너 쉘 접속.
 
-
-### 단일 서비스만 재배포(이미지 교체)
-
-```bash
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml pull app-chat-ws app-chat-history
-```
-```bash
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d --no-deps app-chat-ws app-chat-history
-```
-
-### 정리(불필요 리소스)
-
-```bash
-docker image prune -f
-docker container prune -f
-docker system prune -f
-```
-
----
-
-## 3) 빠른 레시피
-
-### 개발 ① 의존(디비/캐시) 먼저, 앱은 로컬 실행
+### 의존 서비스만 먼저 올리기 (로컬 DB/Redis)
 
 ```bash
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d postgres redis
-./gradlew :chat-ws:bootRun -Dspring.profiles.active=dev
 ```
 
-### 개발 ② 전부 컨테이너
+* 설명: 앱은 로컬에서 직접 `bootRun` 하거나, 나중에 따로 띄울 때 유용.
+
+### 정리(리소스 청소)
+
+```bash
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down -v
+docker image prune -f && docker container prune -f && docker system prune -f
+```
+
+* 설명: 컨테이너/네트워크/이미지/볼륨 정리(※ `-v`는 데이터 초기화 주의).
+
+---
+
+## 🧪 Gradle (루트에서)
 
 ```bash
 ./gradlew :chat-ws:bootJar :chat-history:bootJar -x test
-
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build app-chat-ws app-chat-history
-
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d app-chat-ws app-chat-history
-
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml logs -f app-chat-ws
+./gradlew :chat-ws:test
+./gradlew :chat-history:test
 ```
 
-### 배포(이미지 교체식)
+* 설명: JAR 생성 및 모듈별 테스트.
+
+---
+
+## 🗃️ 데이터베이스/캐시 퀵 점검
 
 ```bash
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d postgres redis
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml pull app-chat-ws app-chat-history
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d --no-deps app-chat-ws app-chat-history
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec postgres psql -U localUser -d localDB -c '\dt'
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec redis redis-cli -a "$REDIS_PASSWORD" PING
 ```
 
----
-
-## 4) 네트워킹 메모
-
-* 컨테이너 ↔ 컨테이너: **서비스명**으로 접근
-
-    * `SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/localDB`
-    * `SPRING_DATA_REDIS_HOST=redis`
-* 호스트 ↔ 컨테이너: 포트 매핑 사용 (예: 브라우저 `http://localhost:8080`)
-* EC2 컨테이너 → 외부/다른 호스트: 해당 호스트의 IP/도메인 사용(사설 IP면 VPC 내부 통신)
+* 설명: Postgres 테이블 확인 / Redis 연결 확인.
 
 ---
 
-## 5) 환경변수 스니펫
+## 📝 사용 팁
 
-```env
-SPRING_PROFILES_ACTIVE=dev
-SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/localDB
-SPRING_DATASOURCE_USERNAME=localUser
-SPRING_DATASOURCE_PASSWORD=secret
-SPRING_DATA_REDIS_HOST=redis
-SPRING_DATA_REDIS_PORT=6379
-REDIS_PASSWORD=changeme
-APP_PORT=8080
-WS_ENDPOINT=http://localhost:8080/ws-sockjs
-```
-
----
-
-## 6) 자주 보는 오류 & 빠른 체크리스트
-
-* **DB/Redis 연결 실패**: 서비스 기동 여부(`ps`), 포트/호스트, 비밀번호 환경변수 확인
-* **Hibernate Dialect/부트 실패**: DB URL/드라이버, `spring.jpa.properties` 확인
-* **삭제한 모듈 빌드 시도**: `settings.gradle`에서 include 제거 후 `--stop && clean`
-* **윈도우에서 `./gradlew` 인식 안 됨**: PowerShell에서 `./gradlew.bat ...` 사용
-
----
-
+* **변경 반영의 핵심은 JAR 선빌드**: dev 구성의 Dockerfile이 “JAR만 COPY”하므로, 항상 `bootJar → compose build → up` 순서로.
+* **no-cache 상황**: 레이어 꼬임/의존성 변경 의심 시 ②번 루틴으로 강제 재빌드.
+* **컨테이너 이름**: Compose의 서비스명(`app-chat-ws`, `app-chat-history`)으로 exec/logs/ps를 다룬다.
