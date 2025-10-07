@@ -1,0 +1,296 @@
+name: Auto Generate PR with Template
+
+on:
+  push:
+    branches: [ "main" ,"production"]
+
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: read
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Check if PR already exists
+        id: check_pr
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          echo "Checking if PR exists for branch: ${{ github.ref_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          
+          if gh pr view "${{ github.ref_name }}" --json number >/dev/null 2>&1; then
+            echo "PR already exists for this branch. Skipping."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "No PR found. Proceeding to create one."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get Commit Messages and PR Template
+        if: steps.check_pr.outputs.exists == 'false'
+        id: get-content
+        run: |
+          COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s")
+          echo "commits<<EOF" >> $GITHUB_ENV
+          echo "$COMMITS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          TEMPLATE=$(cat .github/pull_request_template.md)
+          echo "template<<EOF" >> $GITHUB_ENV
+          echo "$TEMPLATE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Get Issue Title
+        if: steps.check_pr.outputs.exists == 'false'
+        id: get-issue-title
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          # 'feat#123-description' 같은 브랜치 이름에서 숫자 '123'만 추출
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
+          
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "브랜치 이름에서 이슈 번호를 찾을 수 없습니다."
+            # 이슈 번호가 없으면, 브랜치 이름을 기반으로 제목 생성
+            ISSUE_TITLE="${{ github.ref_name }}"
+          else
+            # GitHub CLI를 사용해서 이슈 제목을 가져와
+            ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
+          fi
+          
+          echo "title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Generate PR Body with AI
+        if: steps.check_pr.outputs.exists == 'false'
+        id: generate-body
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commitMessages = process.env.commits;
+            const prTemplate = process.env.template;
+            const geminiApiKey = process.env.GEMINI_API_KEY;
+
+            if (!geminiApiKey) {
+              core.setFailed('GEMINI_API_KEY secret is not set.');
+              return;
+            }
+
+            const prompt = `
+              You are an expert software engineer writing a professional Pull Request description.
+              Your goal is to analyze the provided commit messages and use them to fill out the given PR template in Korean.
+              The description should be clear, technical, and help reviewers understand the purpose and details of the changes.
+
+              Follow these instructions for each section:
+
+              1.  **'## 📝 요약 (Summary)'**: Read all commit messages and write a high-level summary of the PR's main purpose in one or two sentences.
+              2.  **'## ✅ 주요 변경 사항 (Key Changes)'**: Group related commits and list the most significant changes as bullet points.
+              3.  **'## 💻 상세 구현 내용 (Implementation Details)'**: For each key change, provide a detailed technical explanation. Focus on the "why" behind the changes. If a commit message says "refactor: ...", explain what was refactored and why the new approach is better.
+              4.  **'## 🚀 트러블 슈팅 (Trouble Shooting)'**: If any commit messages start with "fix:", describe the problem that was solved. If there are no fix commits, you can state that no specific troubleshooting was required for this PR.
+              5.  **'## ⚠️ 알려진 이슈 및 참고 사항 (Known Issues & Notes)'**: Infer any potential follow-up work or limitations from the commits. If none are apparent, you can state that there are no known issues.
+              6.  Leave '## 📸 스크린샷 (Screenshots)' and '## #️⃣ 관련 이슈 (Related Issues)' sections as they are for the user to fill in.
+
+              The final output must be only the completed markdown text, perfectly matching the provided template structure. Do not add any extra text or wrappers.
+
+              --- PR 템플릿 ---
+              ${prTemplate}
+
+              --- 커밋 메시지 목록 ---
+              ${commitMessages}
+            `;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+            
+            // 재시도 로직 구현
+            const maxRetries = 3;
+            let lastError = null;
+            
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+              try {
+                console.log(`API 호출 시도 ${attempt}/${maxRetries}`);
+            
+                const response = await fetch(apiUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                      temperature: 0.7,
+                      topK: 1,
+                      topP: 1,
+                      maxOutputTokens: 2048,
+                    },
+                    safetySettings: [
+                      {
+                        category: "HARM_CATEGORY_HARASSMENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                      },
+                      {
+                        category: "HARM_CATEGORY_HATE_SPEECH",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                      },
+                      {
+                        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                      },
+                      {
+                        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                      }
+                    ]
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  const error = new Error(`API request failed: ${response.status} ${response.statusText}\nError: ${errorText}`);
+            
+                  // 429 에러 (Rate Limit)인 경우 재시도 대기
+                  if (response.status === 429 && attempt < maxRetries) {
+                    const waitTime = Math.pow(2, attempt) * 2000;
+                    console.log(`Rate limit 초과. ${waitTime}ms 후 재시도...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    lastError = error;
+                    continue;
+                  }
+            
+                  throw error;
+                }
+
+                const result = await response.json();
+            
+                // 전체 응답 로깅 (디버깅용)
+                console.log('Full Gemini Response:', JSON.stringify(result, null, 2));
+
+                // 안전한 속성 접근을 위한 검증
+                if (!result) {
+                  throw new Error('Gemini API returned null or undefined result');
+                }
+
+                // 에러 응답 처리
+                if (result.error) {
+                  throw new Error(`Gemini API returned error: ${JSON.stringify(result.error)}`);
+                }
+
+                // candidates 배열 검증
+                if (!result.candidates || !Array.isArray(result.candidates) || result.candidates.length === 0) {
+                  throw new Error(`Gemini API returned no candidates. This might be due to safety settings or content filtering.\nFull response: ${JSON.stringify(result)}`);
+                }
+
+                // 첫 번째 후보의 구조 검증
+                const candidate = result.candidates[0];
+                if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+                  throw new Error(`Invalid candidate structure in Gemini response.\nCandidate: ${JSON.stringify(candidate)}`);
+                }
+
+                // 안전하게 텍스트 추출
+                let aiResponse = candidate.content.parts[0].text;
+                if (!aiResponse || typeof aiResponse !== 'string') {
+                  throw new Error(`Invalid or empty text response from Gemini.\nParts: ${JSON.stringify(candidate.content.parts)}`);
+                }
+
+                // 응답 검증 - 최소 길이 확인
+                if (aiResponse.length < 100) {
+                  throw new Error(`Generated response is too short (${aiResponse.length} characters). This might indicate an incomplete response.`);
+                }
+
+                aiResponse = aiResponse.replace(/^```markdown\n/, '').replace(/\n```$/, '');
+                console.log('Generated PR body length:', aiResponse.length);
+                console.log('Generated PR body preview:', aiResponse.substring(0, 200) + '...');
+            
+                // 출력 설정 전에 잠시 대기
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            
+                core.setOutput('body', aiResponse);
+                console.log('PR body successfully set to output');
+                return; // 성공 시 함수 종료
+
+              } catch (error) {
+                lastError = error;
+                console.log(`시도 ${attempt} 실패:`, error.message);
+            
+                if (attempt === maxRetries) {
+                  break; // 마지막 시도면 루프 종료
+                }
+            
+                // 마지막 시도가 아니면 잠시 대기
+                const waitTime = 2000 * attempt; // 대기 시간 증가
+                console.log(`${waitTime}ms 후 재시도...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+              }
+            }
+            
+            // 모든 재시도 실패 시 에러 발생
+            core.setFailed(`모든 API 호출 시도 실패: ${lastError?.message || '알 수 없는 오류'}`);
+            return;
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        timeout-minutes: 10 # 타임아웃 시간 증가
+
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          PR_BODY: ${{ steps.generate-body.outputs.body }}
+        run: |
+          # PR body가 비어있는지 확인
+          if [ -z "$PR_BODY" ]; then
+            echo "Error: PR body is empty. Skipping PR creation."
+            exit 1
+          fi
+          
+          echo "PR body length: ${#PR_BODY}"
+          echo "PR body preview: ${PR_BODY:0:200}..."
+          
+          # 재시도 로직으로 PR 생성
+          max_attempts=3
+          for attempt in $(seq 1 $max_attempts); do
+            echo "PR 생성 시도 $attempt/$max_attempts"
+          
+            # 잠시 대기 (점진적으로 증가)
+            wait_time=$((attempt * 5))
+            echo "대기 시간: ${wait_time}초"
+            sleep $wait_time
+          
+            # GitHub API 상태 확인
+            echo "GitHub API 상태 확인 중..."
+            if ! gh api rate-limit > /dev/null 2>&1; then
+              echo "GitHub API 연결 문제. 재시도 중..."
+              continue
+            fi
+          
+            # PR 생성 시도
+            if gh pr create \
+              --base main \
+              --head ${{ github.ref_name }} \
+              --title "${{ github.ref_name }}" \
+              --body "$PR_BODY" \
+              --assignee ${{ github.actor }}; then
+          
+              echo "Pull Request created successfully!"
+              break
+            else
+              echo "PR 생성 실패 (시도 $attempt/$max_attempts)"
+          
+              if [ $attempt -eq $max_attempts ]; then
+                echo "모든 PR 생성 시도 실패. 수동으로 PR을 생성해주세요."
+                echo "브랜치: ${{ github.ref_name }}"
+                echo "PR 내용 길이: ${#PR_BODY}"
+                exit 1
+              fi
+            fi
+          done
