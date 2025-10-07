@@ -17,42 +17,43 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Get Commit Messages and PR Template
         id: get-content
         run: |
-          COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s")
-          echo "commits<<EOF" >> $GITHUB_ENV
-          echo "$COMMITS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          COMMITS=$(git log origin/main..HEAD --pretty=format:"- %s" || true)
+          {
+            echo "commits<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
-          TEMPLATE=$(cat .github/pull_request_template.md)
-          echo "template<<EOF" >> $GITHUB_ENV
-          echo "$TEMPLATE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          TEMPLATE=$(cat .github/pull_request_template.md || true)
+          {
+            echo "template<<EOF"
+            echo "$TEMPLATE"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Get Issue Title
         id: get-issue-title
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
           ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
-
           if [ -z "$ISSUE_NUMBER" ]; then
             ISSUE_TITLE="${{ github.ref_name }}"
           else
             ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
           fi
-
           echo "title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
 
       - name: Generate PR Body with AI
         id: generate-body
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             const commitMessages = process.env.commits;
             const prTemplate = process.env.template;
@@ -217,8 +218,9 @@ jobs:
         timeout-minutes: 10
 
       - name: Create Pull Request
+        if: ${{ github.ref_name != 'main' }}   # ✅ main->main PR 방지
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ github.token }}        # ✅ gh는 이것만 필요
           PR_BODY: ${{ steps.generate-body.outputs.body }}
         run: |
           if [ -z "$PR_BODY" ]; then
@@ -236,27 +238,24 @@ jobs:
             echo "대기 시간: ${wait_time}초"
             sleep $wait_time
 
-            if ! gh api rate-limit > /dev/null 2>&1; then
-              echo "GitHub API 연결 문제. 재시도 중..."
+            # ✅ 인증/연결 확인 (토큰 문제면 여기서 바로 드러남)
+            if ! gh api rate-limit >/dev/null 2>&1; then
+              echo "GitHub API 인증/연결 문제. 재시도 중..."
               continue
             fi
 
             if gh pr create \
               --base main \
               --head ${{ github.ref_name }} \
-              --title "${{ github.ref_name }}" \
+              --title "${{ steps.get-issue-title.outputs.title }}" \
               --body "$PR_BODY" \
-              --assignee ${{ github.actor }}; then
-
+              --assignee "${{ github.actor }}"; then
               echo "Pull Request created successfully!"
               break
             else
               echo "PR 생성 실패 (시도 $attempt/$max_attempts)"
-
               if [ $attempt -eq $max_attempts ]; then
                 echo "모든 PR 생성 시도 실패. 수동으로 PR을 생성해주세요."
-                echo "브랜치: ${{ github.ref_name }}"
-                echo "PR 내용 길이: ${#PR_BODY}"
                 exit 1
               fi
             fi
