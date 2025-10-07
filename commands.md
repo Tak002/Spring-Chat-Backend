@@ -14,7 +14,6 @@
 
 ```bash
 ./gradlew clean build -x test                              
-./gradlew :chat-ws:bootJar :chat-history:bootJar
 ./gradlew :chat-ws:bootJar :chat-history:bootJar -x test
 ./gradlew :chat-ws:build -x test
 ./gradlew :chat-history:build -x test
@@ -23,8 +22,7 @@
 ### 로컬 실행(프로필)
 
 ```bash
-./gradlew :chat-ws:bootRun -Dspring.profiles.active=dev
-./gradlew :chat-history:bootRun -Dspring.profiles.active=dev
+./gradlew clean build -x test -Dspring.profiles.active=dev                              
 ```
 
 ### 테스트
@@ -33,16 +31,6 @@
 ./gradlew test                                      # 전체 테스트
 ./gradlew :chat-ws:test --tests "*SomeTestClass*"   # 특정 테스트
 ```
-
-### 캐시/잔여 설정 이슈 정리(삭제한 모듈 빌드 시도 등)
-
-```bash
-./gradlew --stop
-./gradlew clean
-# settings.gradle 의 include 정리 후
-./gradlew build
-```
-
 ---
 
 ## 2) Docker Compose (개발: base+dev / 배포: base+prod)
@@ -53,19 +41,41 @@
 
 ```bash
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build app-chat-ws app-chat-history
+```
+```bash
 # 캐시 없이
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --no-cache --pull app-chat-ws app-chat-history
 ```
 
+### 의존 서비스 점검 (Redis/Postgres)
+
+```bash
+# Redis, Postgres 컨테이너가 없을 때
+docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate postgres redis
+```
+```bash
+# Redis PING (비번 사용 시)
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec redis redis-cli -a "$REDIS_PASSWORD" ping
+```
+```bash
+# Postgres 접속/점검
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec postgres psql -U localUser -d localDB -c '\dt'
+```
 ### 기동 / 중지
 
 ```bash
 # 특정 서비스만 기동
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d app-chat-ws app-chat-history
+```
+```bash
 # 전체(의존 포함) 기동
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d
+```
+```bash
 # 중지 (네트워크/볼륨 유지)
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down
+```
+```bash
 # 볼륨까지 정리 (데이터 초기화)
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down -v
 ```
@@ -75,28 +85,28 @@ docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml 
 ```bash
 # 상태
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml ps
+```
+```bash
 # 로그 팔로우
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml logs -f app-chat-ws app-chat-history
+```
+```bash
 # 컨테이너 쉘
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec app-chat-ws sh
+```
+```bash
 # 환경변수 확인
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec app-chat-ws sh -lc 'printenv | sort'
 ```
 
-### 의존 서비스 점검 (Redis/Postgres)
 
-```bash
-# Redis PING (비번 사용 시)
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec redis redis-cli -a "$REDIS_PASSWORD" ping
-
-# Postgres 접속/점검
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml exec postgres psql -U localUser -d localDB -c '\dt'
-```
 
 ### 단일 서비스만 재배포(이미지 교체)
 
 ```bash
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml pull app-chat-ws app-chat-history
+```
+```bash
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d --no-deps app-chat-ws app-chat-history
 ```
 
