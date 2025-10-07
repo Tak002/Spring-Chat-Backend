@@ -29,13 +29,11 @@ jobs:
           if [ -n "$WS_API_BASE" ]; then
             echo "Injecting WS_API_BASE=$WS_API_BASE into $FILE"
             sed -i "s|__WS_API_BASE__|$WS_API_BASE|g" "$FILE"
+          elif [ -n "$HIS_API_BASE" ]; then
+            echo "Injecting WS_API_BASE=$HIS_API_BASE into $FILE"
+            sed -i "s|__WS_API_BASE__|$HIS_API_BASE|g" "$FILE"
           else
-            echo "[WARN] WS_API_BASE not set; keeping default (localhost)."
-          if [ -n "HIS_API_BASE" ]; then
-            echo "Injecting WS_API_BASE=HIS_API_BASE into $FILE"
-            sed -i "s|__WS_API_BASE__|HIS_API_BASE|g" "$FILE"
-          else
-            echo "[WARN] HIS_API_BASE not set; keeping default (localhost)."
+            echo "[WARN] WS_API_BASE, HIS_API_BASE not set; keeping default (localhost)."
           fi
 
       - name: Build JARs
