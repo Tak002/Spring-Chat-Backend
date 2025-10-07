@@ -1,185 +1,147 @@
-아래 내용을 `git-commit-instructions.md`로 저장해 사용하세요. (형식 #2: **짧은 본문 버전**)
+# Git Commit — Core-First (Body in Korean)
 
----
-
-# Git Commit Instructions
-
-팀 공통 규칙으로, **한 줄 헤더 + 1–3줄 불릿 본문**을 사용합니다.
-모든 메시지는 **영어**, **명령형**, **간결함**을 기본으로 합니다.
-
-## 1) Format
+## 1) 포맷
 
 ```
-Type: Title
+Type: <핵심 변경 한 줄 요약, 영어·명령형·마침표 X>
 
-- What changed: …
-- Why: …
-Refs: #123
+- 부수 변경: …   # 0–10개, 필요할 때만 추가
+- 부수 변경: …
+- 이유: …        # 1개 필수
+Refs: #123        # 선택
 ```
 
-* **Header(필수)**: `Type: Title`
+* **부수 변경**은 **없으면 전부 생략(0개)**, 많으면 **최대 10개**까지.
+* 4개 이상일 땐 **코드 → 테스트 → 문서 → 인프라** 순으로 정리.
+* 항목은 **중복 합치기**(주석/로그 등 사소 항목 묶기), **~72자 내** 간결히.
+* 브레이킹 체인지는 **Footer**에 별도 표기.
 
-    * Title는 **명령형**, **첫 글자 대문자**, **끝에 마침표 X**
-* **Body(권장)**: 1–3줄 불릿로 요지만
-
-    * `What changed`: 코드 관점 변경 요약
-    * `Why`: 배경/의도(버그 재현 조건, 성능/설계 이유 등)
-* **Footer(선택)**: `Refs: #issue` / `BREAKING CHANGE: …`
-
-## 2) Allowed Types
+## 2) 타입
 
 `Feat, Fix, Build, Chore, Ci, Docs, Style, Refactor, Test, Perf`
 
-> 범위(scope) 괄호 사용 금지. 예) `Feat(api): …` ❌ → `Feat: …` ✅
+> 범위 괄호 금지: `Feat(api): ...` ❌ → `Feat: ...` ✅
 
-## 3) Writing Rules
+## 3) 헤더 선택 기준
 
-* 한 커밋 = 한 목적(“원인-변경-결과”가 일관되도록)
-* 구현 상세보다는 **효과/의도** 중심 (리뷰어가 “왜”를 바로 파악)
-* 숫자/파라미터/임계치 변경은 구체적으로
-* 한국어 금지, 이모지/마침표/문장부호 남용 금지
-* 브레이킹 체인지가 있으면 반드시 명시
+* 공개 API/스키마/런타임/배포 중 **가장 영향 큰 1건**만 헤더로.
+* 본문은 전부 **부수 변경**만.
 
-## 4) Examples
+## 4) 예시
 
-### Feat
+### A (기능 추가, 부수 2개)
 
 ```
-Feat: Add JWT handshake validation for WebSocket
+Feat: Enforce JWT on STOMP connect
 
-- What changed: Validate token in AuthHandshakeHandler before STOMP connect
-- Why: Prevent unauthorized ws connections across chat-ws
+- 부수 변경: AuthHandshakeHandler를 config 패키지로 이동
+- 부수 변경: 토큰 무효 경로 통합 테스트 추가
+- 이유: 무단 WebSocket 접속을 사전 차단하기 위함
 Refs: #210
 ```
 
-### Fix
+### B (버그 수정, 부수 2개)
 
 ```
-Fix: Resolve Redis listener startup failure on Docker network
+Fix: Resolve Redis connection by using service name
 
-- What changed: Set spring.data.redis.host to service name 'redis'
-- Why: Container could not reach localhost -> use compose DNS
+- 부수 변경: 핸드셰이크 디버그 로그 수준 조정
+- 부수 변경: compose 네트워킹 주석/README 보강
+- 이유: 컨테이너에서 localhost 접근 불가 → 서비스명으로 연결 필요
 Refs: #231
 ```
 
-### Build
+### C (성능, 부수 2개)
 
 ```
-Build: Add multi-module bootJar tasks to CI
+Perf: Add (room_id, created_at DESC) index for reads
 
-- What changed: Build :chat-ws and :chat-history jars in pipeline
-- Why: Ensure deploy artifacts for both modules
-Refs: #245
+- 부수 변경: JPA 쿼리를 createdAt 정렬 기준으로 단순화
+- 부수 변경: 읽기 경로 k6 스모크 테스트 추가
+- 이유: 고부하 시 레이턴시 및 DB 부하 감소
+Refs: #275
 ```
 
-### Refactor
+### D (브레이킹 체인지, 부수 2개)
 
 ```
-Refactor: Extract RedisMessageListener configuration
+Feat!: Unify message schema to 'channelId'
 
-- What changed: Move listener wiring into dedicated @Configuration class
-- Why: Reduce context coupling and simplify slice tests
+- 부수 변경: chat-ws/chat-history DTO 마이그레이션
+- 부수 변경: REST/WS 문서 갱신
+- 이유: 멀티 테넌트 라우팅 준비
+BREAKING CHANGE: Clients must send 'channelId' instead of 'roomId'
+Refs: #300
 ```
 
-### Perf
+### E (부수 변경 0개 예시)
 
 ```
-Perf: Reduce broadcast fanout allocations
+Refactor: Inline small factory methods
 
-- What changed: Reuse object mapper and pre-serialize static headers
-- Why: Lower GC pressure under 5k concurrent ws clients
+- 이유: 불필요한 간접 호출 제거로 가독성 및 유지보수성 개선
+Refs: #412
 ```
 
-### Docs
+## 5) `.gitmessage.txt` (한국어 본문·유동 부수 변경)
 
 ```
-Docs: Clarify docker-compose dev vs prod usage
-
-- What changed: Add examples for merge -f base -f dev and service targets
-- Why: Prevent misuse in IntelliJ run configs
-```
-
-### Ci
-
-```
-Ci: Push image with Buildx cache and tag by SHA
-
-- What changed: Enable inline cache and add gh.sha tag
-- Why: Speed up rebuilds and allow reproducible rollbacks
-```
-
-### Test
-
-```
-Test: Add WebSocket integration test for room join/leave
-
-- What changed: k6 smoke + Spring messaging integration tests
-- Why: Guard against regressions in handshake path
-```
-
-## 5) BREAKING CHANGE
-
-중요 API/스키마 변경 시 본문에 명시하세요.
-
-```
-Feat!: Unify message schema across chat-ws and chat-history
-
-- What changed: Replace 'roomId' with 'channelId' in payload
-- Why: Prepare for multi-tenant routing
-BREAKING CHANGE: Clients must send 'channelId' field instead of 'roomId'
-```
-
-## 6) Quick Template (.gitmessage.txt)
-
-레포 루트에 저장 후:
-
-```bash
-git config commit.template .gitmessage.txt
-```
-
-`./.gitmessage.txt` 내용:
-
-```
-# Header (required)
+# Header (required) — focus on the single core change
 # Types: Feat | Fix | Build | Chore | Ci | Docs | Style | Refactor | Test | Perf
-Type: <Title in imperative mood, no period>
+Type: <Core change in imperative, no period>
 
-# Body (1–3 bullets; keep concise)
-- What changed: 
-- Why: 
+# Body (Korean)
+# 부수 변경은 0~10개. 의미 있는 것만 남기고, 불필요하면 전부 삭제하세요.
+# 4개 이상이면 코드 → 테스트 → 문서 → 인프라 순서 권장.
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 부수 변경: 
+- 이유: 
+
 Refs: #<issue>
 
-# For breaking changes, add:
+# For breaking changes (keep keyword in English):
 # BREAKING CHANGE: <impact and migration>
 ```
 
-## 7) Copilot와 함께 쓰기 (선택)
-
-Copilot의 **Git Commit Instructions**(Global/Workspace)에 아래를 추가하면 자동 생성 품질이 좋아집니다.
+## 6) Copilot 지시문 (부수 변경 자동 결정 포함)
 
 ```
-Generate commit messages using this format:
+Generate a commit message that follows:
 
-1) Header: "Type: Title"
-   - Types: Feat, Fix, Build, Chore, Ci, Docs, Style, Refactor, Test, Perf
-   - No parentheses or scope. Title in imperative mood, capitalized, no final period.
+Header (English)
+- "Type: Title" (imperative, capitalized, no period).
+- Allowed types: Feat, Fix, Build, Chore, Ci, Docs, Style, Refactor, Test, Perf.
+- No scopes in parentheses.
 
-2) Body: 1–3 bullet lines
-   - "- What changed: ..."
-   - "- Why: ..."
-   - Optional: "Refs: #123"
-   - If breaking: add "BREAKING CHANGE: ..."
+Body (Korean)
+- Add 0–10 "부수 변경: ..." bullets for ancillary (non-core) changes ONLY.
+- If there are no meaningful ancillary changes, output NO "부수 변경:" lines.
+- Keep each bullet within ~72 characters; merge trivial items into one line.
+- If 4+ bullets, order them as: 코드 → 테스트 → 문서 → 인프라.
+- Include exactly one "이유: ..." line describing the purpose/effect of the core change.
 
-Write in concise English. Prefer intent over diff detail.
+Footer (optional)
+- "Refs: #<number>".
+- If breaking, include: "BREAKING CHANGE: ...".
+
+Selection logic
+- Determine the number of "부수 변경" bullets from the diff.
+- Prioritize by impact and user visibility; cap at 10.
 ```
 
-## 8) Anti-patterns (Don’t)
+## 7) 체크리스트 (업데이트)
 
-* `Update`, `Fix bug`, `WIP`, `misc` 같은 모호한 제목
-* 한국어/이모지/마침표로 끝나는 제목
-* 한 커밋에 관계없는 변경 묶기
-* 본문 없는 대규모 변경(리뷰어가 “왜”를 알 수 없음)
-
----
-
-이 문서대로 커밋하면, 히스토리 검색성/리뷰 속도/릴리즈 노트 품질이 확실히 좋아집니다.
+* [ ] 헤더는 영어·핵심 한 줄?
+* [ ] **부수 변경 0~10개**(없으면 생략, 많으면 10개 이내)?
+* [ ] 4개 이상이면 **코드→테스트→문서→인프라** 순서?
+* [ ] 각 항목 ~72자, 중복/사소 항목은 병합?
+* [ ] `이유:` 1개로 목적/효과만?
+* [ ] (해당 시) `BREAKING CHANGE:` 포함?

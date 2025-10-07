@@ -1,4 +1,4 @@
-package com.tak.chat_common.commonDto;
+package com.tak.chat_common.commonDto.send;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessageDto {
+public class ChatMessageSendDto { // 클라이언트에서 서버로 전송되는 메시지 DTO
     private String sender;
     private String content;
     private String roomId;
-
 }
