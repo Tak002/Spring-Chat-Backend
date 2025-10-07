@@ -19,16 +19,24 @@ jobs:
             out_port: 8081
             repo_name: chat-history
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Inject WebSocket endpoint to index.html
         run: |
-          WS_ENDPOINT="${{ secrets.WS_ENDPOINT }}"
+          WS_API_BASE="${{ secrets.WS_API_BASE }}"
+          HIS_API_BASE="${{ secrets.HIS_API_BASE }}"
           FILE=./chat-ws/src/main/resources/static/index.html
-          if [ -n "$WS_ENDPOINT" ]; then
-            echo "Injecting WS_ENDPOINT=$WS_ENDPOINT into $FILE"
-            sed -i "s|__WS_ENDPOINT__|$WS_ENDPOINT|g" "$FILE"
+          
+          if [ -n "$WS_API_BASE" ]; then
+            echo "Injecting WS_API_BASE=$WS_API_BASE into $FILE"
+            sed -i "s|__WS_API_BASE__|$WS_API_BASE|g" "$FILE"
           else
-            echo "[WARN] WS_ENDPOINT not set; keeping default (localhost)."
+            echo "[WARN] WS_API_BASE not set; keeping default (localhost)."
+          fi
+          if [ -n "$HIS_API_BASE" ]; then
+            echo "Injecting HIS_API_BASE=$HIS_API_BASE into $FILE"
+            sed -i "s|__HIS_API_BASE__|$HIS_API_BASE|g" "$FILE"
+          else
+            echo "[WARN] HIS_API_BASE not set; keeping default (localhost)."
           fi
 
       - name: Build JARs
@@ -59,10 +67,10 @@ jobs:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # 서버로 compose 두 파일 업로드 (base + prod)
       - name: Upload compose (base + prod)
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -79,12 +87,13 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN
+          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN,CORS_ALLOWED_ORIGINS
           script: |
             set -euo pipefail
             mkdir -p /opt/chat
@@ -94,6 +103,7 @@ jobs:
             export IMAGE_TAG="${IMAGE_TAG}"
             export WS_IMAGE="${REGISTRY_USERNAME}/chat-ws"
             export HIST_IMAGE="${REGISTRY_USERNAME}/chat-history"
+            export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}"
             
             # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"

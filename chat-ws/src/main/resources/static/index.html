@@ -6,12 +6,26 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
-        body { font-family: sans-serif; line-height: 1.4; }
+        :root { --card:#f8f9fa; --muted:#666; --ok:#0a7; --bad:#d33; --warn:#b26a00; --border:#ddd; }
+        body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 20px; }
         input, button { font-size: 1rem; }
-        #messages { border: 1px solid #ccc; height: 260px; overflow-y: auto; margin: 0.8em 0; padding: 0.5em; }
-        #status { color: #555; margin-left: 0.5em; }
-        .row { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+        #messages { border: 1px solid var(--border); height: 320px; overflow-y: auto; margin: .8em 0; padding: .5em; background: #fff; }
+        #status { color: var(--muted); margin-left: .5em; }
+        .row { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; }
         .grow { flex: 1; }
+
+        .msg-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .5em .7em; margin: .35em 0; }
+        .msg-head { font-size: .85rem; color:#222; margin-bottom:.35em; display:flex; gap:.4em .5em; flex-wrap:wrap; align-items:center; }
+        .badge { font-size: .72rem; padding: .15em .5em; border-radius: 999px; border:1px solid var(--border); background:#fff; }
+        .badge.temp { border-color:#ffb300; color:var(--warn); }
+        .badge.saved { border-color:var(--ok); color:var(--ok); }
+        .badge.del { border-color:var(--bad); color:var(--bad); }
+        .msg-body { font-size: .95rem; }
+        .sender { font-weight: 700; margin-right:.35em; }
+        .meta-time { font-size:.72rem; color: var(--muted); }
+        details { margin-top:.35em; }
+        details > summary { font-size:.78rem; color:#333; cursor:pointer; }
+        pre.json { margin:.3em 0 0; font-size:.8rem; white-space:pre-wrap; word-break:break-word; background:#fff; border:1px dashed var(--border); padding:.4em .5em; border-radius:6px; }
     </style>
 </head>
 <body>
@@ -36,56 +50,167 @@
 
 <script>
     // ===== 설정 =====
-    const ENDPOINT = "__WS_ENDPOINT__" === "__"+"WS_ENDPOINT__"
-        ? "http://localhost:8080/ws-sockjs"
-        : "__WS_ENDPOINT__";
-    const TOPIC_PREFIX = '/topic/';                      // 방 구독: /topic/{roomId}
-    const APP_SEND = '/app/chat/';            // 서버 수신 엔드포인트 (필요시 변경)
+
+    const WS_API_BASE = "__WS_API_BASE__" === "__" + "WS_API_BASE__"
+        ? "http://localhost:8080"
+        : "__WS_API_BASE__";
+
+    const HIS_API_BASE = "__HIS_API_BASE__" === "__" + "HIS_API_BASE__"
+        ? "http://localhost:8081"
+        : "__HIS_API_BASE__";
+
+    const WS_ENDPOINT = WS_API_BASE + "/ws-sockjs";
+
+    const TOPIC_PREFIX = "/topic/";           // 구독: /topic/{roomId}
+    const APP_SEND = "/app/chat";             // 전송 엔드포인트
 
     // ===== 상태 =====
     let stompClient = null;
     let currentSubscription = null;
-    let currentRoomId = '';
+    let currentRoomId = "";
+    const idToEl = new Map(); // id -> 카드 엘리먼트
 
     // ===== 유틸 =====
-    function qs(id) { return document.getElementById(id); }
-    function now() { return new Date().toLocaleTimeString(); }
-    function setStatus(text) { qs('status').textContent = text; }
+    const qs = (id) => document.getElementById(id);
+    const now = () => new Date().toLocaleTimeString();
+    const setStatus = (text) => qs("status").textContent = text;
 
-    function showMessage(msg) {
-        const box = qs('messages');
-        box.insertAdjacentHTML('beforeend', `${msg}<br/>`);
+    function clearMessages() {
+        qs("messages").innerHTML = "";
+        idToEl.clear();
+    }
+
+    function shortId(id) { return (id ?? "null").slice(0, 8) + "…"; }
+    function fmtTime(s) { return s ? s.replace("T"," ").replace("Z","Z") : "null"; }
+
+    function renderHead(container, obj, { isTemp = false } = {}) {
+        const head = container.querySelector(".msg-head");
+        const state = isTemp ? "temp" : (obj.deleted ? "del" : "saved");
+        head.innerHTML = `
+      <span class="badge">room: ${obj.roomId ?? currentRoomId}</span>
+      <span class="badge">id: ${shortId(obj.id)}</span>
+      <span class="badge ${state}">${isTemp ? "TEMP" : (obj.deleted ? "DELETED" : "SAVED")}</span>
+      <span class="meta-time">createdAt: ${fmtTime(obj.createdAt)}</span>
+      <span class="meta-time">editedAt: ${fmtTime(obj.editedAt)}</span>
+    `;
+    }
+
+    function renderBody(container, obj) {
+        const body = container.querySelector(".msg-body");
+        body.innerHTML = `<span class="sender">${obj.sender ?? "unknown"}</span><span class="content">${obj.content ?? ""}</span>`;
+    }
+
+    function renderJson(container, obj) {
+        const pre = container.querySelector("pre.json");
+        pre.textContent = JSON.stringify(obj, null, 2);
+    }
+
+    function makeCard(obj, { isTemp = false } = {}) {
+        const card = document.createElement("div");
+        card.className = "msg-card";
+        card.dataset.id = obj.id ?? "";
+
+        card.innerHTML = `
+      <div class="msg-head"></div>
+      <div class="msg-body"></div>
+      <details>
+        <summary>자세히 (전체 속성 JSON)</summary>
+        <pre class="json"></pre>
+      </details>
+    `;
+
+        renderHead(card, obj, { isTemp });
+        renderBody(card, obj);
+        renderJson(card, obj);
+
+        return card;
+    }
+
+    function appendCard(obj, opts) {
+        const card = makeCard(obj, opts);
+        const box = qs("messages");
+        box.appendChild(card);
+        box.scrollTop = box.scrollHeight;
+
+        idToEl.set(obj.id ?? "", card);
+        return card;
+    }
+
+    function updateCardId(oldId, newId) {
+        if (!idToEl.has(oldId)) return;
+        const el = idToEl.get(oldId);
+        el.dataset.id = newId;
+        idToEl.delete(oldId);
+        idToEl.set(newId, el);
+    }
+
+    function patchCard(id, patchObj = {}) {
+        const el = idToEl.get(id);
+        if (!el) return;
+
+        const pre = el.querySelector("pre.json");
+        let currentObj;
+        try { currentObj = JSON.parse(pre.textContent); } catch { currentObj = {}; }
+
+        const merged = { ...currentObj, ...patchObj };
+        renderHead(el, merged, { isTemp: false });
+        renderBody(el, merged);
+        renderJson(el, merged);
+    }
+
+    function showInfo(text) {
+        const box = qs("messages");
+        const div = document.createElement("div");
+        div.className = "msg-card";
+        div.style.background = "#fff";
+        div.style.borderStyle = "dashed";
+        div.textContent = text;
+        box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     }
 
-    // ===== 연결 / 구독 =====
+    // ===== 서버 연결 =====
     function ensureConnected(onConnected) {
         if (stompClient && stompClient.connected) {
             onConnected && onConnected();
             return;
         }
-        const socket = new SockJS(ENDPOINT);
+        const socket = new SockJS(WS_ENDPOINT);
         stompClient = Stomp.over(socket);
-        // 콘솔 로그 줄이고 싶으면 아래 한 줄 추가
         // stompClient.debug = null;
 
         stompClient.connect({}, frame => {
             setStatus(`서버 연결됨 (${now()})`);
-            showMessage(`서버 연결됨: ${frame}`);
+            showInfo(`서버 연결됨: ${frame}`);
             onConnected && onConnected();
         }, error => {
             setStatus(`연결 오류 (${now()}): ${error}`);
-            showMessage(`연결 오류: ${error}`);
+            showInfo(`연결 오류: ${error}`);
         });
+    }
+
+    async function loadHistory(roomId) {
+        try {
+            const res = await fetch(`${HIS_API_BASE}/${encodeURIComponent(roomId)}/messages`, {
+                method: "GET",
+                headers: { "Accept": "application/json" },
+                // mode: "cors" // 필요시
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json(); // { messages: [...] }
+            const list = Array.isArray(data.messages) ? data.messages : [];
+            list.forEach(m => appendCard(m, { isTemp: false }));
+        } catch (e) {
+            showInfo(`히스토리 로드 실패: ${e.message}`);
+        }
     }
 
     function subscribeRoom(roomId) {
         if (!stompClient || !stompClient.connected) {
-            showMessage('서버와 연결되지 않았습니다. 먼저 연결을 수행합니다.');
+            showInfo("서버와 연결되지 않았습니다. 먼저 연결합니다.");
             ensureConnected(() => subscribeRoom(roomId));
             return;
         }
-        // 기존 구독 해제
         if (currentSubscription) {
             try { currentSubscription.unsubscribe(); } catch (_) {}
             currentSubscription = null;
@@ -93,43 +218,54 @@
 
         currentRoomId = roomId;
         const destination = `${TOPIC_PREFIX}${roomId}`;
-
         currentSubscription = stompClient.subscribe(destination, frame => {
-            try {
-                const msg = JSON.parse(frame.body);
-                const rid = msg.roomId ?? roomId; // 메시지에 roomId가 없으면 현재 방 표시
-                showMessage(`[${rid}] ${msg.sender}: ${msg.content}`);
-            } catch {
-                // JSON이 아닐 수 있으므로 안전하게 처리
-                showMessage(`[${roomId}] ${frame.body}`);
+            let msg;
+            try { msg = JSON.parse(frame.body); } catch { msg = frame.body; }
+
+            if (typeof msg !== "object" || msg === null) {
+                showInfo(`[raw] ${frame.body}`);
+                return;
+            }
+
+            // 1) 최초 수신(임시)
+            // { id, sender, content, roomId, createdAt:null, editedAt:null, deleted:false }
+            // 2) confirm
+            // { id: realId, tempId: oldId, createdAt, editedAt }
+            if (msg.tempId && (msg.createdAt || msg.editedAt)) {
+                const { tempId, id: realId, createdAt, editedAt } = msg;
+                if (idToEl.has(tempId)) {
+                    updateCardId(tempId, realId);
+                    patchCard(realId, { id: realId, createdAt, editedAt });
+                } else {
+                    // 혹시 임시카드를 놓쳤다면 확정 상태로 새로 추가
+                    appendCard({ ...msg, roomId: currentRoomId, deleted: false }, { isTemp: false });
+                }
+            } else {
+                appendCard(msg, { isTemp: true });
             }
         });
 
         setStatus(`방 연결: ${destination} (${now()})`);
-        showMessage(`방 구독됨: ${destination}`);
+        showInfo(`방 구독됨: ${destination}`);
     }
 
     // ===== 전송 / 종료 =====
     function sendMessage() {
-        const sender = qs('sender').value.trim();
-        const content = qs('content').value;
-        const roomId = currentRoomId || qs('roomId').value.trim();
+        const sender = qs("sender").value.trim();
+        const content = qs("content").value;
+        const roomId = currentRoomId || qs("roomId").value.trim();
 
         if (!stompClient || !stompClient.connected) {
-            showMessage('먼저 서버에 연결하고 방을 선택하세요.');
+            showInfo("먼저 서버에 연결하고 방을 선택하세요.");
             return;
         }
         if (!roomId) {
-            showMessage('방 ID를 입력 후 [연결]을 눌러주세요.');
+            showInfo("방 ID를 입력 후 [연결]을 눌러주세요.");
             return;
         }
 
-        stompClient.send(APP_SEND + roomId, {}, JSON.stringify({
-            sender,
-            content,
-            roomId
-        }));
-        qs('content').value = '';
+        stompClient.send(APP_SEND, {}, JSON.stringify({ sender, content, roomId }));
+        qs("content").value = "";
     }
 
     function disconnect() {
@@ -137,33 +273,32 @@
             try { currentSubscription.unsubscribe(); } catch (_) {}
             currentSubscription = null;
         }
-        currentRoomId = '';
+        currentRoomId = "";
         if (stompClient) {
             stompClient.disconnect(() => {
                 setStatus(`연결 종료됨 (${now()})`);
-                showMessage('연결 종료됨');
+                showInfo("연결 종료됨");
             });
             stompClient = null;
         }
     }
 
     // ===== 이벤트 바인딩 =====
-    qs('btnConnectRoom').addEventListener('click', () => {
-        const roomId = qs('roomId').value.trim();
-        if (!roomId) {
-            showMessage('방 ID를 입력하세요.');
-            return;
-        }
+    qs("btnConnectRoom").addEventListener("click", async () => {
+        const roomId = qs("roomId").value.trim();
+        if (!roomId) return showInfo("방 ID를 입력하세요.");
+        clearMessages();
+        await loadHistory(roomId);
         ensureConnected(() => subscribeRoom(roomId));
     });
 
-    qs('btnDisconnect').addEventListener('click', disconnect);
-    qs('btnSend').addEventListener('click', sendMessage);
-    qs('content').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendMessage();
+    qs("btnDisconnect").addEventListener("click", disconnect);
+    qs("btnSend").addEventListener("click", sendMessage);
+    qs("content").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
     });
 
-    // 필요 시 자동 서버 연결만 수행 (방은 수동으로 선택)
+    // 필요 시 자동 서버 연결만 수행(방 연결은 수동)
     ensureConnected();
 </script>
 </body>
