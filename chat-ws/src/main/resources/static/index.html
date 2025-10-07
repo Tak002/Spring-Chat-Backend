@@ -50,10 +50,17 @@
 
 <script>
     // ===== 설정 =====
-    const WS_ENDPOINT = "__WS_ENDPOINT__" === "__" + "WS_ENDPOINT__"
-        ? "http://localhost:8080/ws-sockjs"
-        : "__WS_ENDPOINT__";
-    const API_BASE = "http://localhost:8081"; // GET /{roomId}/messages
+
+    const WS_API_BASE = "__WS_API_BASE__" === "__" + "WS_API_BASE__"
+        ? "http://localhost:8080"
+        : "__WS_API_BASE__";
+
+    const HIS_API_BASE = "__HIS_API_BASE__" === "__" + "HIS_API_BASE__"
+        ? "http://localhost:8081"
+        : "__HIS_API_BASE__";
+
+    const WS_ENDPOINT = WS_API_BASE + "/ws-sockjs";
+
     const TOPIC_PREFIX = "/topic/";           // 구독: /topic/{roomId}
     const APP_SEND = "/app/chat";             // 전송 엔드포인트
 
@@ -184,7 +191,7 @@
 
     async function loadHistory(roomId) {
         try {
-            const res = await fetch(`${API_BASE}/${encodeURIComponent(roomId)}/messages`, {
+            const res = await fetch(`${HIS_API_BASE}/${encodeURIComponent(roomId)}/messages`, {
                 method: "GET",
                 headers: { "Accept": "application/json" },
                 // mode: "cors" // 필요시
