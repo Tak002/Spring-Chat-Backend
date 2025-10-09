@@ -6,6 +6,8 @@ services:
     pull_policy: never
 
   app-chat-history:
+    environment:
+      CORS_ALLOWED_ORIGINS: "http://localhost:8080"
     build:
       context: ..                # ✅ 루트
       dockerfile: infra/dockerfile/chat-history.Dockerfile
