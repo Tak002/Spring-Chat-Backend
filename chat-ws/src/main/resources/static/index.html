@@ -81,7 +81,13 @@
     }
 
     function shortId(id) { return (id ?? "null").slice(0, 8) + "…"; }
-    function fmtTime(s) { return s ? s.replace("T"," ").replace("Z","Z") : "null"; }
+    function fmtTime(s) {
+        if (!s) return "null";
+        const date = new Date(s);
+        // UTC-> KST 는 웹 브라우저에서 로컬 타임으로 자동 변환, 따라서 별도의 시간 변환이 불필요
+        // format: yyyy-MM-dd-HH-mm-ss
+        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    }
 
     function renderHead(container, obj, { isTemp = false } = {}) {
         const head = container.querySelector(".msg-head");
