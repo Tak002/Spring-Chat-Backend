@@ -64,19 +64,51 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
 
-      - name: Get Issue Title
-        id: get-issue-title
+#      - name: Get Issue Title
+#        id: get-issue-title
+#        env:
+#          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+#        run: |
+#          BRANCH_NAME="${{ steps.branch.outputs.name }}"
+#          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
+#          if [ -z "$ISSUE_NUMBER" ]; then
+#            ISSUE_TITLE="$BRANCH_NAME"
+#          else
+#            ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
+#          fi
+#          echo "title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Generate PR Title with AI
+        id: generate-title
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const commitMessages = process.env.commits;
+            const geminiApiKey = process.env.GEMINI_API_KEY;
+            if (!geminiApiKey) {
+              core.setFailed('GEMINI_API_KEY secret is not set.');
+              return;
+            }
+            const prompt = `
+                            아래 커밋 메시지들을 참고하여, PR의 목적을 한 문장(최대 50자 이내)으로 요약한 한국어 제목을 작성하세요.
+              커밋 메시지:
+              ${commitMessages}
+            `;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                                generationConfig: { temperature: 0.7, maxOutputTokens: 128 }
+              }),
+            });
+            const result = await response.json();
+            const title = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'PR 제목 자동생성 실패';
+            core.setOutput('title', title);
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
-          BRANCH_NAME="${{ steps.branch.outputs.name }}"
-          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -o -E '#[0-9]+' | sed 's/#//')
-          if [ -z "$ISSUE_NUMBER" ]; then
-            ISSUE_TITLE="$BRANCH_NAME"
-          else
-            ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q ".title")
-          fi
-          echo "title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Generate PR Body with AI
         id: generate-body
@@ -271,12 +303,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_BODY: ${{ steps.generate-body.outputs.body }}
+          TITLE: ${{ steps.generate-title.outputs.title }}
         run: |
           gh pr create \
             --repo "${{ github.repository }}" \
             --base main \
             --head "${{ steps.branch.outputs.name }}" \
-            --title "${{ steps.get-issue-title.outputs.title }}" \
+            --title "$TITLE"\
             --body "$PR_BODY" \
             --assignee "${{ github.actor }}"
 
@@ -286,7 +319,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_BODY: ${{ steps.generate-body.outputs.body }}
+          TITLE: ${{steps.generate-title.outputs.title}}
         run: |
           gh pr edit "${{ github.event.pull_request.number }}" \
             --repo "${{ github.repository }}" \
+            --title "$TITLE"\
             --body "$PR_BODY"
