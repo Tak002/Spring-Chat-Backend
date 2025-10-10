@@ -3,7 +3,8 @@ name: Auto Generate PR with Template
 on:
   pull_request:
     types: [opened, synchronize, reopened]  # PR 본문 업데이트
-
+    branches:
+      - main
 permissions:
   pull-requests: write
   issues: read
