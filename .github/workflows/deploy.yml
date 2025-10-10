@@ -115,4 +115,14 @@ jobs:
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps app-chat-ws app-chat-history
 
             docker image prune -f
-            
+
+  release-notes:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
