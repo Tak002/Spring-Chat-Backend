@@ -3,10 +3,11 @@ name: build-and-deploy
 on:
   push:
     branches: [ "main" ,"production"]
-
+  pull_request:
+    branches: [ "main" ]
 jobs:
   docker-build-and-push:
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    if: !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -65,7 +66,7 @@ jobs:
           cache-to: type=gha,mode=max    # ← 캐시 저장(최대)
 
   deploy:
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    if: github.ref == 'refs/heads/production' && !contains(github.event.head_commit.message, '[skip ci]') # production 브랜치에 푸시될 때만 배포
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -119,8 +120,7 @@ jobs:
             docker image prune -f
 
   release-notes:
-    if: github.ref == 'refs/heads/main'
-    needs: deploy
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event_name == 'pull_request' # main 브랜치에 push(즉, PR merge)될 때만 실행
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@v6
