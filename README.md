@@ -121,3 +121,63 @@ STOMP + Redis Pub/Sub 기반의 **실시간 멀티룸 채팅 서버**
 | Docker Compose (기본 설정)  | [`infra/docker-compose.base.yml`](./infra/docker-compose.base.yml)                       |
 | Docker Compose (운영 환경)  | [`infra/docker-compose.prod.yml`](./infra/docker-compose.prod.yml)                       |
 
+
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    participant Client as 클라이언트<br/>(웹 브라우저)
+    participant WS as chat-ws<br/>(WebSocket 서버)
+    participant Redis as Redis<br/>(Pub/Sub)
+    participant History as chat-history<br/>(메시지 저장 서버)
+    participant DB as PostgreSQL<br/>(데이터베이스)
+
+    Note over Client,DB: 1️⃣ 초기 연결 및 히스토리 로드
+    
+    Client->>+WS: WebSocket 연결 (SockJS/STOMP)
+    WS-->>-Client: 연결 확인 (SessionConnected)
+    
+    Client->>+WS: SUBSCRIBE /topic/{roomId}
+    WS-->>-Client: 구독 확인
+    
+    Client->>+History: GET /{roomId}/messages
+    History->>+DB: SELECT * FROM chat_message<br/>WHERE room_id = ? AND is_deleted = false
+    DB-->>-History: 과거 메시지 목록
+    History-->>-Client: ChatMessagesReceiveDto<br/>(과거 대화 내역)
+
+    Note over Client,DB: 2️⃣ 메시지 송수신 플로우
+
+    Client->>+WS: SEND /app/chat<br/>ChatMessageSendDto {sender, content, roomId}
+    
+    WS->>+Redis: PUBLISH chat-message<br/>ChatMessagePubSubDto {tempId, sender, content, roomId}
+    
+    Note over Redis: Redis Pub/Sub으로<br/>모든 인스턴스에 브로드캐스트
+    
+    Redis-->>WS: chat-message 이벤트
+    WS->>Client: SEND /topic/{roomId}<br/>ChatMessageReceiveDto {id: tempId, createdAt: null}
+    Note over Client: 임시 ID로 메시지 즉시 표시<br/>(낙관적 UI 업데이트)
+    
+    Redis-->>+History: chat-message 이벤트<br/>RedisChatMessageSubscriber
+    
+    History->>+DB: INSERT INTO chat_message<br/>(sender, content, room_id)
+    DB-->>-History: 저장 완료<br/>(id, created_at, edited_at 자동 생성)
+    
+    History->>+Redis: PUBLISH chat-timestamp<br/>ChatTimestampPubSubDto {id, tempId, createdAt, editedAt}
+    
+    Redis-->>WS: chat-timestamp 이벤트
+    WS->>-Client: SEND /topic/{roomId}<br/>ChatTimestampReceiveDto {id, tempId, createdAt, editedAt}
+    
+    Note over Client: tempId를 실제 id로 교체<br/>타임스탬프 업데이트
+
+    Note over Client,DB: 3️⃣ 멀티 인스턴스 동기화
+
+    Redis-->>WS: chat-message 이벤트
+    Note over WS: 다른 인스턴스의<br/>WebSocket 클라이언트들
+    WS->>Client: SEND /topic/{roomId}<br/>동일한 메시지 브로드캐스트
+
+    Note over Client,DB: 4️⃣ 연결 종료
+
+    Client->>WS: UNSUBSCRIBE /topic/{roomId}
+    Client->>WS: DISCONNECT
+    WS-->>Client: SessionDisconnect 이벤트
+```
