@@ -24,6 +24,7 @@ STOMP + Redis Pub/Sub 기반의 **실시간 멀티룸 채팅 서버**
 
 ## 🔮 **Planned Features**
 
+* Image, PDF 같은 파일도 송수신 가능
 * JWT 인증 및 WebSocket 인증 완성
 * 대규모 트래픽 부하 테스트 및 최적화
 * 테스트 자동화 (단위 / 통합 / E2E)
