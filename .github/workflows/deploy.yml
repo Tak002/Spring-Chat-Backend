@@ -157,19 +157,19 @@ jobs:
             # 6) 이미지 청소
             docker image prune -f
 
-release-notes:
-  if: >-
-    ${{
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')) ||
-      (github.event_name == 'pull_request' &&
-       github.event.action == 'closed' &&
-       github.event.pull_request.merged == true &&
-       github.event.pull_request.base.ref == 'main')
-    }}
-  runs-on: ubuntu-latest
-  steps:
-    - uses: release-drafter/release-drafter@v6
-      with:
-        config-name: release-drafter.yml
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release-notes:
+    if: >-
+      ${{
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')) ||
+        (github.event_name == 'pull_request' &&
+         github.event.action == 'closed' &&
+         github.event.pull_request.merged == true &&
+         github.event.pull_request.base.ref == 'main')
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
