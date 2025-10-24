@@ -59,6 +59,9 @@ services:
   app-service:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
+      SPRING_DATASOURCE_USERNAME: localUser
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports: ["8082:8080"]
     restart: unless-stopped
 
@@ -71,5 +74,8 @@ services:
   app-auth:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
+      SPRING_DATASOURCE_USERNAME: localUser
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports: ["8084:8080"]
     restart: unless-stopped

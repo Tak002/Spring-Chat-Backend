@@ -10,4 +10,4 @@ pluginManagement {
 }
 
 rootProject.name = 'chat-suite'
-include 'chat-ws', 'chat-history', 'chat-common', 'app-service', 'app-auth', 'app-media'
+include 'chat-ws', 'chat-history', 'common', 'app-service', 'app-auth', 'app-media'
