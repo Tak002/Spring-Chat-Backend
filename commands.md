@@ -6,34 +6,19 @@
 
 ## 🔝 자주 쓰는 명령
 
-### 1) 앱만 빠르게 재배포 (JAR 선빌드 → 이미지 재빌드 → 앱만 재기동)
+### 앱만 빠르게 재배포 (JAR 선빌드 → 이미지 재빌드 → 앱만 재기동)
 
 ```bash
-./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel app-chat-ws app-chat-history
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps app-chat-ws app-chat-history
+./gradlew bootJar --no-daemon -x test
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps
+```
+
+```bash 
+./gradlew bootJar --no-daemon -x test;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps
 ```
 
 * 설명: 로컬에서 JAR 생성 후, 두 앱 이미지만 재빌드·무중단 재기동.
-
-### 2) 앱만(no cache) 강제 재배포
-
-```bash
-./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --no-cache --pull app-chat-ws app-chat-history
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps app-chat-ws app-chat-history
-```
-
-* 설명: 캐시 무시하고 이미지 재빌드 후 앱만 교체. (의존성/레이어 꼬임 해결)
-
-### 3) 모든 서비스 한번에 시작(처음 세팅/환경 변경 후)
-
-```bash
-./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
-docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --build
-```
-
-* 설명: DB/Redis 포함 전부 기동(+필요 시 앱 빌드).
 
 ---
 

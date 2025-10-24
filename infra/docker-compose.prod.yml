@@ -1,5 +1,5 @@
 services:
-  app-chat-ws:
+  chat-ws:
     image: ${WS_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
@@ -13,7 +13,7 @@ services:
     ports: ["8080:8080"]
     restart: unless-stopped
 
-  app-chat-history:
+  chat-history:
     image: ${HIST_IMAGE:-tak002/chat-history}:${IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}

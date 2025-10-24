@@ -24,7 +24,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  app-chat-ws:
+  chat-ws:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
@@ -41,7 +41,7 @@ services:
     ports: ["8080:8080"]
     restart: unless-stopped
 
-  app-chat-history:
+  chat-history:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
@@ -56,5 +56,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8081:8081"]
+    ports: ["8081:8080"]
+    restart: unless-stopped
+
+  app-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports: ["8082:8080"]
+    restart: unless-stopped
+
+  app-media:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports: ["8083:8080"]
+    restart: unless-stopped
+
+  app-auth:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports: ["8084:8080"]
     restart: unless-stopped
