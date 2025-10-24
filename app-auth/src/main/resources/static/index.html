@@ -196,7 +196,7 @@
                 <div id="status" class="status">대기</div>
             </div>
             <pre id="result" class="result">전송 전...</pre>
-            <div class="help">요청 URL: <code>http://localhost:8082/api/users</code> · 헤더: <code>Content-Type: application/json</code></div>
+            <div class="help">요청 URL: <code>http://localhost:8084/auth/signup</code> · 헤더: <code>Content-Type: application/json</code></div>
         </div>
     </div>
 </div>
@@ -217,7 +217,7 @@
         };
 
         try {
-            const res = await fetch('http://localhost:8082/api/users', {
+            const res = await fetch('http://localhost:8084/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

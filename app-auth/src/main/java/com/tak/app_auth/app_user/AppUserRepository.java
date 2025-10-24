@@ -1,4 +1,4 @@
-package com.tak.app_service.app_user;
+package com.tak.app_auth.app_user;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
