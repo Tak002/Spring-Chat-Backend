@@ -1,19 +1,14 @@
 services:
-  app-chat-ws:
+  chat-ws:
     image: ${WS_IMAGE:-tak002/spring-chat-server}:${IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/localDB}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-localUser}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-secret}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     pull_policy: always
-    ports: ["8080:8080"]
-    restart: unless-stopped
 
-  app-chat-history:
+  chat-history:
     image: ${HIST_IMAGE:-tak002/chat-history}:${IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
@@ -24,5 +19,22 @@ services:
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     pull_policy: always
-    ports: [ "8081:8081" ]
-    restart: unless-stopped
+
+  app-service:
+    image: ${APP_IMAGE:-tak002/app-service}:${IMAGE_TAG:-latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    pull_policy: always
+
+  app-media:
+    image: ${MEDIA_IMAGE:-tak002/app-media}:${IMAGE_TAG:-latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    pull_policy: always
+
+  app-auth:
+    image: ${AUTH_IMAGE:-tak002/app-auth}:${IMAGE_TAG:-latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    pull_policy: always
+

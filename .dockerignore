@@ -1,0 +1,13 @@
+# 0) 전부 제외
+**
+
+# 1) 각 서비스 JAR만 포함 (루트 기준 경로, 슬래시는 /)
+!/chat-ws/build/libs/*.jar
+!/chat-history/build/libs/*.jar
+!/app-service/build/libs/*.jar
+!/app-auth/build/libs/*.jar
+!/app-media/build/libs/*.jar
+
+# 2) 빌드에 필요한 Dockerfile/Compose만 포함
+!/infra/dockerfile/*.Dockerfile
+!/infra/docker-compose*.yml
