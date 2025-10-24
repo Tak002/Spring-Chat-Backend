@@ -14,12 +14,19 @@ jobs:
         include:
           - name: chat-ws
             dockerfile: infra/dockerfile/chat-ws.Dockerfile
-            out_port: 8080
             repo_name: chat-ws
           - name: chat-history
             dockerfile: infra/dockerfile/chat-history.Dockerfile
-            out_port: 8081
             repo_name: chat-history
+          - name: app-service
+            dockerfile: infra/dockerfile/app-service.Dockerfile
+            repo_name: app-service
+          - name: app-media
+            dockerfile: infra/dockerfile/app-media.Dockerfile
+            repo_name: app-media
+          - name: app-auth
+            dockerfile: infra/dockerfile/app-auth.Dockerfile
+            repo_name: app-auth
     steps:
       - uses: actions/checkout@v5
       - name: Inject WebSocket endpoint to index.html
@@ -41,8 +48,21 @@ jobs:
             echo "[WARN] HIS_API_BASE not set; keeping default (localhost)."
           fi
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Build JARs
-        run: ./gradlew :chat-ws:bootJar :chat-history:bootJar --no-daemon -x test
+        run: |
+          ./gradlew \
+            :chat-ws:bootJar \
+            :chat-history:bootJar \
+            :app-service:bootJar \
+            :app-media:bootJar \
+            :app-auth:bootJar \
+            --no-daemon -x test
 
       - name: Login to Docker registry
         uses: docker/login-action@v3
@@ -91,32 +111,51 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
           CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          SPRING_DATA_REDIS_HOST: ${{ secrets.SPRING_DATA_REDIS_HOST }}
+          SPRING_DATA_REDIS_PORT: ${{ secrets.SPRING_DATA_REDIS_PORT }}
+          USE_LOCAL_INFRA: ${{ secrets.USE_LOCAL_INFRA }} # "true"면 로컬 postgres/redis 사용
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN,CORS_ALLOWED_ORIGINS
+          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN,CORS_ALLOWED_ORIGINS,REDIS_PASSWORD,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,SPRING_DATA_REDIS_HOST,SPRING_DATA_REDIS_PORT,USE_LOCAL_INFRA
           script: |
             set -euo pipefail
             mkdir -p /opt/chat
             cd /opt/chat
-            
-            # 1) 환경변수 설정
+
+            # 1) 배포 환경변수 주입 (compose에서 참조)
             export IMAGE_TAG="${IMAGE_TAG}"
             export WS_IMAGE="${REGISTRY_USERNAME}/chat-ws"
             export HIST_IMAGE="${REGISTRY_USERNAME}/chat-history"
+            export APP_IMAGE="${REGISTRY_USERNAME}/app-service"
+            export MEDIA_IMAGE="${REGISTRY_USERNAME}/app-media"
+            export AUTH_IMAGE="${REGISTRY_USERNAME}/app-auth"
             export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}"
             
             # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"
             echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY_SERVER}" -u "${REGISTRY_USERNAME}" --password-stdin
-      
-            # 3) 도커 컴포즈로 서비스 배포 (postgres, redis는 재생성하지 않음)
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate postgres redis
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull app-chat-ws app-chat-history
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps app-chat-ws app-chat-history
 
+            # 3) (옵션) 로컬 인프라 사용 시 profiles=infra로 postgres/redis 기동
+            if [ "${USE_LOCAL_INFRA:-false}" = "true" ]; then
+              docker compose -f docker-compose.base.yml --profile infra up -d postgres redis
+            fi
+
+            # 4) 최신 이미지 당겨오기
+            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull \
+              chat-ws chat-history app-service app-media app-auth
+
+            # 5) 무중단에 가깝게 서비스만 롤아웃
+            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps \
+              chat-ws chat-history app-service app-media app-auth
+
+            # 6) 이미지 청소
             docker image prune -f
 
   release-notes:
