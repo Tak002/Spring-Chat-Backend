@@ -140,21 +140,13 @@ jobs:
             # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"
             echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY_SERVER}" -u "${REGISTRY_USERNAME}" --password-stdin
-
-            # 3) (옵션) 로컬 인프라 사용 시 profiles=infra로 postgres/redis 기동
-            if [ "${USE_LOCAL_INFRA:-false}" = "true" ]; then
-              docker compose -f docker-compose.base.yml --profile infra up -d postgres redis
-            fi
-
-            # 4) 최신 이미지 당겨오기
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull \
+  
+            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull  \
               chat-ws chat-history app-service app-media app-auth
-
-            # 5) 무중단에 가깝게 서비스만 롤아웃
+            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate \
+              postgres redis
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps \
               chat-ws chat-history app-service app-media app-auth
-
-            # 6) 이미지 청소
             docker image prune -f
 
   release-notes:
