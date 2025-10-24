@@ -5,6 +5,11 @@ on:
     branches: [ "main" ,"production"]
   pull_request:
     branches: [ "main" ]
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write     # draft release 업데이트에 필요
+
 jobs:
   docker-build-and-push:
     if: ${{ !contains((github.event.head_commit.message || github.event.pull_request.title || github.event.pull_request.body || ''), '[skip ci]') }}
@@ -152,12 +157,19 @@ jobs:
             # 6) 이미지 청소
             docker image prune -f
 
-  release-notes:
-    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: release-drafter/release-drafter@v6
-        with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+release-notes:
+  if: >-
+    ${{
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main')) ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'closed' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main')
+    }}
+  runs-on: ubuntu-latest
+  steps:
+    - uses: release-drafter/release-drafter@v6
+      with:
+        config-name: release-drafter.yml
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
