@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 jobs:
   docker-build-and-push:
-    if: !contains(github.event.head_commit.message, '[skip ci]')
+    if: ${{ !contains((github.event.head_commit.message || github.event.pull_request.title || github.event.pull_request.body || ''), '[skip ci]') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -56,13 +56,7 @@ jobs:
 
       - name: Build JARs
         run: |
-          ./gradlew \
-            :chat-ws:bootJar \
-            :chat-history:bootJar \
-            :app-service:bootJar \
-            :app-media:bootJar \
-            :app-auth:bootJar \
-            --no-daemon -x test
+          ./gradlew bootJar --no-daemon -x test
 
       - name: Login to Docker registry
         uses: docker/login-action@v3
@@ -86,7 +80,7 @@ jobs:
           cache-to: type=gha,mode=max    # ← 캐시 저장(최대)
 
   deploy:
-    if: github.ref == 'refs/heads/production' && !contains(github.event.head_commit.message, '[skip ci]') # production 브랜치에 푸시될 때만 배포
+    if: ${{ github.ref == 'refs/heads/production' && !contains((github.event.head_commit.message || ''), '[skip ci]') }}
     needs: docker-build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -159,7 +153,7 @@ jobs:
             docker image prune -f
 
   release-notes:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event_name == 'pull_request' # main 브랜치에 push(즉, PR merge)될 때만 실행
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@v6
