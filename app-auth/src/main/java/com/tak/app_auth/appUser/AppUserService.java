@@ -2,6 +2,7 @@ package com.tak.app_auth.appUser;
 
 import com.tak.app_auth.dto.CreateAppUserRequest;
 import com.tak.app_auth.dto.LoginRequest;
+import com.tak.app_auth.refreshToken.RefreshToken;
 import com.tak.app_auth.refreshToken.RefreshTokenService;
 import com.tak.app_auth.util.PasswordHasher;
 import com.tak.app_auth.util.TokenUtil;
@@ -10,7 +11,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +52,7 @@ public class AppUserService {
 
     public String loginTest(String token) {
         if(TokenUtil.validateAccessToken(token)){
-            return TokenUtil.getUserIdFromToken(token);
+            return TokenUtil.getUserIdFromAccessToken(token);
         }
         else{
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
@@ -57,7 +60,7 @@ public class AppUserService {
     }
 
     public String logout(String refreshToken) {
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -68,13 +71,9 @@ public class AppUserService {
     }
 
     public Map<String,String> rotateRefreshToken(String oldRefreshToken) {
-        // 기존 리프레시 토큰 검증 및 사용자 조회
-        try {
-            AppUser appUser = refreshtokenService.validateAndGetUser(oldRefreshToken);
-            return generateTokens(appUser);
-        }catch (Exception e){
-            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
-        }
+        AppUser appUser = refreshtokenService.validateAndGetUser(oldRefreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다."));
+        return generateTokens(appUser);
     }
 
     private Map<String, String> generateTokens(AppUser appUser) {
@@ -89,5 +88,46 @@ public class AppUserService {
                 .build();
 
         return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString());
+    }
+
+    // return String of Access token validity, id, expiration + refreshToken validity, refreshToken.id, user.id, user.email, expiration
+    public Map<String,String> tokenTest(String accessToken, String rowRefreshToken) {
+        String accessTokenUserId;
+
+        String accessTokenExpiration;
+        String accessTokenValidity = TokenUtil.validateAccessToken(accessToken)? "Valid" : "Invalid";
+        if(accessTokenValidity.equals("Valid")){
+            accessTokenUserId = TokenUtil.getUserIdFromAccessToken(accessToken);
+            accessTokenExpiration = String.valueOf(TokenUtil.getExpirationDateFromAccessToken(accessToken));
+        }else {
+            accessTokenUserId = null;
+            accessTokenExpiration = null;
+        }
+
+        String refreshTokenValidity;
+        String refreshTokenUserId;
+        String refreshTokenExpiration;
+        Optional<RefreshToken> refreshToken = refreshtokenService.validateAndGetRefreshToken(rowRefreshToken);
+        if (refreshToken.isPresent()) {
+            refreshTokenValidity = "valid";
+            refreshTokenUserId = String.valueOf(refreshToken.get().getUser().getId());
+            refreshTokenExpiration = String.valueOf(refreshToken.get().getExpiresAt());
+        } else {
+            refreshTokenValidity = "invalid";
+            refreshTokenUserId = null;
+            refreshTokenExpiration = null;
+        }
+
+        return Map.of(
+                "accessTokenValidity", accessTokenValidity,
+                "accessTokenUserId", accessTokenUserId,
+                "accessTokenExpiration", accessTokenExpiration,
+                "refreshTokenValidity", refreshTokenValidity,
+                "refreshTokenUserId", refreshTokenUserId,
+                "refreshTokenExpiration", refreshTokenExpiration
+        );
+
+
+
     }
 }

@@ -82,6 +82,17 @@
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
 
+    function extractAccessToken(data) {
+        if (!data || typeof data !== 'object') return null;
+        const keys = ['accessToken', 'token', 'jwt', 'id_token'];
+        for (const k of keys) {
+            if (typeof data[k] === 'string' && data[k].length > 0) return data[k];
+        }
+        if (data.data) return extractAccessToken(data.data);
+        if (data.result) return extractAccessToken(data.result);
+        return null;
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         statusEl.textContent = '전송 중...'; statusEl.className='status';
@@ -101,9 +112,17 @@
             let parsed;
             try { parsed = JSON.parse(text); } catch (_) { parsed = text; }
 
+            // 응답 표시
             result.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
             statusEl.textContent = `HTTP ${res.status}`;
             statusEl.className = res.ok ? 'status ok' : 'status err';
+
+            // accessToken 추출 및 메모리(sessionStorage) 저장
+            const token = extractAccessToken(parsed);
+            if (token) {
+                sessionStorage.setItem('accessToken', token);
+                console.info('accessToken saved to sessionStorage');
+            }
         } catch (err) {
             result.textContent = '요청 실패: ' + err;
             statusEl.textContent = '오류';

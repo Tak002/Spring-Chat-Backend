@@ -1,3 +1,4 @@
+<!-- file: 'app-auth/src/main/resources/templates/login-test.html' -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -22,8 +23,8 @@
         button{appearance:none;border:0;background:var(--primary);color:white;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;}
         .result{background:#0f172a;color:#e6eefc;border-radius:8px;padding:12px;font-family:ui-monospace, "Roboto Mono", monospace;font-size:13px;white-space:pre-wrap;overflow:auto;max-height:320px;}
         .status{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:700;}
-        .status.ok{background:rgba(22,163,74,0.12);color:var(--success);}
-        .status.err{background:rgba(220,38,38,0.08);color:var(--danger);}
+        .status.ok{background:rgba(22,163,74,0.12);color:#16a34a;}
+        .status.err{background:rgba(220,38,38,0.08);color:#dc2626;}
         small.hint{color:var(--muted);display:block;margin-top:6px;}
     </style>
 </head>
@@ -56,6 +57,22 @@
             <div id="status" class="status">대기</div>
         </div>
         <pre id="result" class="result">전송 전...</pre>
+
+        <!-- 추가: /auth/token-test 호출 섹션 -->
+        <div style="margin-top:20px;border-top:1px solid #eef2ff;padding-top:16px;">
+            <h2 style="margin:0 0 8px 0;font-size:16px;">Token Test (/auth/token-test)</h2>
+            <p class="lead">`sessionStorage`의 `accessToken`을 헤더로 전송하고, 쿠키(`refresh_token`)는 포함합니다.</p>
+            <div class="actions">
+                <button type="button" id="tokenTestBtn">토큰 테스트 호출</button>
+                <button type="button" id="showTokenBtn" class="muted">저장된 accessToken 보기</button>
+            </div>
+
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div class="help">서버 응답</div>
+                <div id="tokenTestStatus" class="status">대기</div>
+            </div>
+            <pre id="tokenTestResult" class="result">전송 전...</pre>
+        </div>
     </div>
 </div>
 
@@ -65,6 +82,15 @@
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
 
+    // util: 안전한 JSON 파싱
+    function safeParse(text) {
+        try { return JSON.parse(text); } catch (_) { return text; }
+    }
+    function getStoredAccessToken() {
+        try { return sessionStorage.getItem('accessToken') || ''; } catch (_) { return ''; }
+    }
+
+    // 기존: /auth/login-test (본문/헤더로 토큰 전달)
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         statusEl.textContent = '전송 중...'; statusEl.className='status';
@@ -76,10 +102,8 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ token })
             });
-
             const text = await res.text();
-            let parsed;
-            try { parsed = JSON.parse(text); } catch (_) { parsed = text; }
+            const parsed = safeParse(text);
 
             result.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
             statusEl.textContent = `HTTP ${res.status}`;
@@ -96,6 +120,49 @@
         result.textContent = '전송 전...';
         statusEl.textContent = '대기';
         statusEl.className = 'status';
+    });
+
+    // 추가: /auth/token-test (헤더 accessToken, 쿠키 포함)
+    const tokenTestBtn = document.getElementById('tokenTestBtn');
+    const showTokenBtn = document.getElementById('showTokenBtn');
+    const tokenTestStatus = document.getElementById('tokenTestStatus');
+    const tokenTestResult = document.getElementById('tokenTestResult');
+
+    tokenTestBtn.addEventListener('click', async () => {
+        const accessToken = getStoredAccessToken();
+        tokenTestStatus.textContent = '전송 중...'; tokenTestStatus.className='status';
+
+        if (!accessToken) {
+            tokenTestResult.textContent = 'sessionStorage에 accessToken이 없습니다.';
+            tokenTestStatus.textContent = '토큰 없음';
+            tokenTestStatus.className = 'status err';
+            return;
+        }
+
+        try {
+            const res = await fetch('http://localhost:8084/auth/token-test', {
+                method: 'GET',
+                headers: { 'accessToken': accessToken },
+                credentials: 'include' // refresh_token 쿠키 포함
+            });
+            const text = await res.text();
+            const parsed = safeParse(text);
+
+            tokenTestResult.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
+            tokenTestStatus.textContent = `HTTP ${res.status}`;
+            tokenTestStatus.className = res.ok ? 'status ok' : 'status err';
+        } catch (err) {
+            tokenTestResult.textContent = '요청 실패: ' + err;
+            tokenTestStatus.textContent = '오류';
+            tokenTestStatus.className = 'status err';
+        }
+    });
+
+    showTokenBtn.addEventListener('click', () => {
+        const t = getStoredAccessToken();
+        tokenTestResult.textContent = t ? ('accessToken: ' + t) : 'sessionStorage에 accessToken이 없습니다.';
+        tokenTestStatus.textContent = t ? '표시' : '토큰 없음';
+        tokenTestStatus.className = t ? 'status ok' : 'status err';
     });
 </script>
 </body>

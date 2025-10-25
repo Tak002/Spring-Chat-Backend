@@ -44,8 +44,11 @@ public class TokenUtil {
     }
 
     // 토큰 안에 넣어둔 subject (여기서는 userId) 꺼내기
-    public static String getUserIdFromToken(String token) {
+    public static String getUserIdFromAccessToken(String token) {
         return parseClaims(token).getSubject();
+    }
+    public static Date getExpirationDateFromAccessToken(String token) {
+        return parseClaims(token).getExpiration();
     }
 
     // 토큰 만료 여부/서명 여부 등 기본 유효성

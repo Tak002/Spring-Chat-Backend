@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/auth")
@@ -77,9 +78,9 @@ public class AppUserController {
     }
 
     @PostMapping("/rotate-refresh-token")
-    public ResponseEntity<?> rotateRefreshToken(@CookieValue String refresh_token) {
+    public ResponseEntity<?> rotateRefreshToken(@CookieValue String refreshToken) {
         try {
-            Map<String, String> tokens = appUserService.rotateRefreshToken(refresh_token);
+            Map<String, String> tokens = appUserService.rotateRefreshToken(refreshToken);
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, tokens.get("refreshCookie"))
                     .body(Map.of("accessToken", tokens.get("accessToken")));
@@ -88,5 +89,13 @@ public class AppUserController {
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+    
+//    토큰 동작 테스트용 엔드포인트
+    @GetMapping("/token-test")
+    public ResponseEntity<Map<String, String>> tokenTest(@RequestHeader String accessToken, @CookieValue String refresh_token) {
+        Map<String, String> tokenData = appUserService.tokenTest(accessToken, refresh_token);
+        return ResponseEntity.ok(tokenData);
+
     }
 }

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,15 +33,16 @@ public class RefreshTokenService {
     }
 
 
-    public AppUser validateAndGetUser(String oldRefreshToken) {
-        String tokenHash = TokenUtil.sha256Hex(oldRefreshToken);
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다."));
-
-        if (refreshToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new IllegalArgumentException("만료된 리프레시 토큰입니다.");
-        }
-
-        return refreshToken.getUser();
+    public Optional<AppUser> validateAndGetUser(String oldRefreshToken) {
+        return validateAndGetRefreshToken(oldRefreshToken)
+                .map(RefreshToken::getUser);
     }
+
+    public Optional<RefreshToken> validateAndGetRefreshToken(String refreshToken) {
+        String tokenHash = TokenUtil.sha256Hex(refreshToken);
+        return refreshTokenRepository.findByTokenHash(tokenHash)
+                .filter(token -> token.getExpiresAt().isAfter(OffsetDateTime.now()));
+    }
+
+
 }
