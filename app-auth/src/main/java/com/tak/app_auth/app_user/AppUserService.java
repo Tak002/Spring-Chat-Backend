@@ -1,11 +1,17 @@
 package com.tak.app_auth.app_user;
 
 import com.tak.app_auth.dto.CreateAppUserRequest;
-import com.tak.app_auth.dto.LoginAppUserRequest;
+import com.tak.app_auth.dto.LoginRequest;
+import com.tak.app_auth.dto.LoginResponse;
 import com.tak.app_auth.util.PasswordHasher;
 import com.tak.app_auth.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +35,7 @@ public class AppUserService {
 
     }
 
-    public String login(LoginAppUserRequest request) {
+    public Map<String,String> login(LoginRequest request) {
         // Email 검증
         AppUser appUser = appUserRepository.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + request.getEmail()));
 
@@ -37,9 +43,19 @@ public class AppUserService {
         if(!appUser.getPasswordHash().equals(PasswordHasher.hash(request.getPasswordRow()))){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
+        // JwtToken 생성
+        String accessToken= jwtUtil.generateToken(String.valueOf(appUser.getId()));
+        // todo Refresh Token 생성
+        String refreshToken = "tempRefreshToken";
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(Duration.ofDays(14))
+                .build();
 
-        // JwtToken 생성 (생략)
-        return jwtUtil.generateToken(String.valueOf(appUser.getId()));
+        return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString());
     }
 
     public String loginTest(String token) {
