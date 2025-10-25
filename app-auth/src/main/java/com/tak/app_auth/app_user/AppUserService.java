@@ -1,5 +1,6 @@
 package com.tak.app_auth.app_user;
 
+import com.tak.app_auth.dto.CreateAppUserRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

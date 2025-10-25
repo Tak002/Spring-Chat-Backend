@@ -6,51 +6,250 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
-        :root { --card:#f8f9fa; --muted:#666; --ok:#0a7; --bad:#d33; --warn:#b26a00; --border:#ddd; }
-        body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 20px; }
-        input, button { font-size: 1rem; }
-        #messages { border: 1px solid var(--border); height: 320px; overflow-y: auto; margin: .8em 0; padding: .5em; background: #fff; }
-        #status { color: var(--muted); margin-left: .5em; }
-        .row { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; }
-        .grow { flex: 1; }
+        :root{
+            --bg:#f3f6fb;
+            --card:#ffffff;
+            --muted:#6b7280;
+            --accent:#2563eb;
+            --accent-strong:#1e40af;
+            --ok:#059669;
+            --bad:#ef4444;
+            --border:#e6edf3;
+            --glass: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,250,0.9));
+            --radius:10px;
+            --shadow: 0 8px 28px rgba(16,24,40,0.06);
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+        }
 
-        .msg-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .5em .7em; margin: .35em 0; }
-        .msg-head { font-size: .85rem; color:#222; margin-bottom:.35em; display:flex; gap:.4em .5em; flex-wrap:wrap; align-items:center; }
-        .badge { font-size: .72rem; padding: .15em .5em; border-radius: 999px; border:1px solid var(--border); background:#fff; }
-        .badge.temp { border-color:#ffb300; color:var(--warn); }
-        .badge.saved { border-color:var(--ok); color:var(--ok); }
-        .badge.del { border-color:var(--bad); color:var(--bad); }
-        .msg-body { font-size: .95rem; }
-        .sender { font-weight: 700; margin-right:.35em; }
-        .meta-time { font-size:.72rem; color: var(--muted); }
-        details { margin-top:.35em; }
-        details > summary { font-size:.78rem; color:#333; cursor:pointer; }
-        pre.json { margin:.3em 0 0; font-size:.8rem; white-space:pre-wrap; word-break:break-word; background:#fff; border:1px dashed var(--border); padding:.4em .5em; border-radius:6px; }
+        html,body{
+            height:100%;
+            margin:0;
+            background:linear-gradient(180deg,#f7fbff, var(--bg));
+            font-family: Inter, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color:#0f172a;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            padding:20px;
+            box-sizing:border-box;
+        }
+
+        .container{
+            max-width:1100px;
+            margin:0 auto;
+        }
+
+        header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:14px;
+        }
+        header h2{
+            margin:0;
+            font-size:1.15rem;
+            letter-spacing: -0.2px;
+        }
+        header .sub{
+            color:var(--muted);
+            font-size:.9rem;
+        }
+
+        .card{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            padding:18px;
+            display:grid;
+            grid-template-columns: 1fr 360px;
+            gap:18px;
+            align-items:start;
+        }
+        @media (max-width:880px){
+            .card{ grid-template-columns: 1fr; padding:14px; }
+        }
+
+        .controls{
+            display:flex;
+            gap:8px;
+            align-items:center;
+            flex-wrap:wrap;
+        }
+        .row { display:flex; align-items:center; gap:.6em; flex-wrap:wrap; }
+        input[type="text"], input[type="email"], input[type="search"]{
+            padding:8px 10px;
+            border-radius:8px;
+            border:1px solid var(--border);
+            background:var(--glass);
+            outline:none;
+            font-size:0.98rem;
+            min-width:120px;
+            box-sizing:border-box;
+        }
+        input[type="text"]:focus, input[type="email"]:focus, input[type="search"]:focus{
+            border-color:var(--accent);
+            box-shadow:0 8px 20px rgba(37,99,235,0.06);
+        }
+
+        button{
+            border:0;
+            padding:8px 12px;
+            border-radius:8px;
+            font-weight:600;
+            cursor:pointer;
+            background:var(--accent);
+            color:white;
+            transition:transform .08s, background .12s, box-shadow .12s;
+        }
+        button:hover{ background:var(--accent-strong); transform:translateY(-1px); }
+        button.secondary{
+            background:transparent;
+            color:var(--muted);
+            border:1px solid var(--border);
+            font-weight:600;
+        }
+
+        /* messages area */
+        #messages{
+            border:1px solid var(--border);
+            background:#fff;
+            border-radius:8px;
+            padding:12px;
+            min-height:320px;
+            max-height:520px;
+            overflow:auto;
+            box-sizing:border-box;
+        }
+
+        .msg-card{
+            background: linear-gradient(180deg,#fff,#fbfdff);
+            border:1px solid #eef3f8;
+            border-radius:10px;
+            padding:10px 12px;
+            margin:10px 0;
+            display:block;
+            box-shadow: 0 3px 10px rgba(12,18,30,0.03);
+        }
+        .msg-head{
+            display:flex;
+            gap:.6em;
+            align-items:center;
+            flex-wrap:wrap;
+            margin-bottom:6px;
+        }
+        .badge{
+            font-size:.72rem;
+            padding:.18em .5em;
+            border-radius:999px;
+            border:1px solid var(--border);
+            background:#fff;
+            color:#111827;
+        }
+        .badge.room { background:linear-gradient(90deg,#f1f5f9,#fff); border-color:#e2e8f0; }
+        .badge.id { font-family:var(--mono); color:var(--muted); }
+        .meta-time { font-size:.75rem; color:var(--muted); margin-left:auto; }
+
+        .msg-body{
+            font-size:0.98rem;
+            color:#0b1220;
+            display:flex;
+            gap:.45em;
+            align-items:flex-start;
+            word-break:break-word;
+        }
+        .sender{ font-weight:700; color:var(--accent-strong); }
+        .content{ color:#111827; }
+
+        pre.json{
+            margin:8px 0 0;
+            font-family:var(--mono);
+            font-size:.82rem;
+            background:#fafafa;
+            border:1px dashed var(--border);
+            padding:8px;
+            border-radius:8px;
+            white-space:pre-wrap;
+            word-break:break-word;
+            color:#0b1220;
+        }
+
+        .status-bar{
+            display:flex;
+            gap:8px;
+            align-items:center;
+            justify-content:flex-end;
+            font-size:.92rem;
+            color:var(--muted);
+        }
+        .status{
+            padding:6px 8px;
+            border-radius:999px;
+            font-weight:700;
+            font-size:.82rem;
+            display:inline-block;
+        }
+        .status.ok{ background:rgba(5,150,105,0.08); color:var(--ok); border:1px solid rgba(5,150,105,0.12); }
+        .status.err{ background:rgba(239,68,68,0.08); color:var(--bad); border:1px solid rgba(239,68,68,0.12); }
+
+        .input-send{
+            display:flex;
+            gap:8px;
+            align-items:center;
+            margin-top:12px;
+        }
+        .grow{ flex:1; min-width:0; }
+        input.grow{ width:100%; }
+
+        /* 작은 유틸 */
+        .muted{ color:var(--muted); font-size:.9rem; }
+        details summary{ cursor:pointer; font-size:.9rem; color:#333; }
     </style>
 </head>
 <body>
-<h2>STOMP WebSocket 채팅 테스트</h2>
+<div class="container">
+    <header>
+        <h2>STOMP WebSocket 채팅 테스트</h2>
+        <div class="sub muted">동적 채팅방 · WebSocket + STOMP</div>
+    </header>
 
-<div class="row">
-    <strong>닉네임:</strong>
-    <input type="text" id="sender" value="takUniv" />
-    <strong>채팅방:</strong>
-    <input type="text" id="roomId" value="public" />
-    <button id="btnConnectRoom">연결</button>
-    <button id="btnDisconnect">연결 종료</button>
-    <span id="status"></span>
-</div>
+    <div class="card">
+        <div>
+            <div class="row controls" style="margin-bottom:12px;">
+                <strong>닉네임:</strong>
+                <input type="text" id="sender" value="takUniv" />
+                <strong>채팅방:</strong>
+                <input type="text" id="roomId" value="public" />
+                <button id="btnConnectRoom">연결</button>
+                <button id="btnDisconnect" class="secondary">연결 종료</button>
+                <span id="status" style="margin-left:8px;"></span>
+            </div>
 
-<div id="messages"></div>
+            <div id="messages" aria-live="polite"></div>
 
-<div class="row">
-    <input class="grow" type="text" id="content" placeholder="메시지 입력..." />
-    <button id="btnSend">전송</button>
+            <div class="input-send">
+                <input class="grow" type="text" id="content" placeholder="메시지 입력..." />
+                <button id="btnSend">전송</button>
+            </div>
+        </div>
+
+        <div style="min-width:0; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="muted">서버 응답</div>
+                <div id="status" class="status">대기</div>
+            </div>
+
+            <div style="background:#0b1220; color:#e8f0ff; padding:12px; border-radius:8px; font-family:var(--mono); min-height:160px; max-height:320px; overflow:auto;">
+                <div class="muted" style="color:rgba(232,240,255,0.9)">로그 / 디버그 출력</div>
+                <pre id="debug" style="margin:8px 0 0; white-space:pre-wrap;"></pre>
+            </div>
+
+            <div class="muted">요청 엔드포인트: <code>WS: /ws-sockjs</code> · 히스토리 API: <code>/&lt;roomId&gt;/messages</code></div>
+        </div>
+    </div>
 </div>
 
 <script>
-    // ===== 설정 =====
-
+    // 기존 스크립트 유지 — 디버그 출력을 추가로 기록하도록 변경
     const WS_API_BASE = "__WS_API_BASE__" === "__" + "WS_API_BASE__"
         ? "http://localhost:8080"
         : "__WS_API_BASE__";
@@ -60,44 +259,45 @@
         : "__HIS_API_BASE__";
 
     const WS_ENDPOINT = WS_API_BASE + "/ws-sockjs";
+    const TOPIC_PREFIX = "/topic/";
+    const APP_SEND = "/app/chat";
 
-    const TOPIC_PREFIX = "/topic/";           // 구독: /topic/{roomId}
-    const APP_SEND = "/app/chat";             // 전송 엔드포인트
-
-    // ===== 상태 =====
     let stompClient = null;
     let currentSubscription = null;
     let currentRoomId = "";
-    const idToEl = new Map(); // id -> 카드 엘리먼트
-
-    // ===== 유틸 =====
+    const idToEl = new Map();
     const qs = (id) => document.getElementById(id);
     const now = () => new Date().toLocaleTimeString();
-    const setStatus = (text) => qs("status").textContent = text;
+    const setStatus = (text) => {
+        const el = qs("status");
+        if (el) el.textContent = text;
+    };
+    function logDebug(text){
+        const dbg = qs("debug");
+        if (!dbg) return;
+        dbg.textContent = (dbg.textContent ? dbg.textContent + "\n" : "") + `[${now()}] ${text}`;
+        dbg.parentElement.scrollTop = dbg.parentElement.scrollHeight;
+    }
 
     function clearMessages() {
         qs("messages").innerHTML = "";
         idToEl.clear();
     }
-
     function shortId(id) { return (id ?? "null").slice(0, 8) + "…"; }
     function fmtTime(s) {
         if (!s) return "null";
         const date = new Date(s);
-        // UTC-> KST 는 웹 브라우저에서 로컬 타임으로 자동 변환, 따라서 별도의 시간 변환이 불필요
-        // format: yyyy-MM-dd-HH-mm-ss
         return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
     }
 
     function renderHead(container, obj, { isTemp = false } = {}) {
         const head = container.querySelector(".msg-head");
-        const state = isTemp ? "temp" : (obj.deleted ? "del" : "saved");
+        const state = isTemp ? "TEMP" : (obj.deleted ? "DELETED" : "SAVED");
         head.innerHTML = `
-      <span class="badge">room: ${obj.roomId ?? currentRoomId}</span>
-      <span class="badge">id: ${shortId(obj.id)}</span>
-      <span class="badge ${state}">${isTemp ? "TEMP" : (obj.deleted ? "DELETED" : "SAVED")}</span>
+      <span class="badge room">room: ${obj.roomId ?? currentRoomId}</span>
+      <span class="badge id">id: ${shortId(obj.id)}</span>
+      <span class="badge">${state}</span>
       <span class="meta-time">createdAt: ${fmtTime(obj.createdAt)}</span>
-      <span class="meta-time">editedAt: ${fmtTime(obj.editedAt)}</span>
     `;
     }
 
@@ -115,7 +315,6 @@
         const card = document.createElement("div");
         card.className = "msg-card";
         card.dataset.id = obj.id ?? "";
-
         card.innerHTML = `
       <div class="msg-head"></div>
       <div class="msg-body"></div>
@@ -124,11 +323,9 @@
         <pre class="json"></pre>
       </details>
     `;
-
         renderHead(card, obj, { isTemp });
         renderBody(card, obj);
         renderJson(card, obj);
-
         return card;
     }
 
@@ -137,7 +334,6 @@
         const box = qs("messages");
         box.appendChild(card);
         box.scrollTop = box.scrollHeight;
-
         idToEl.set(obj.id ?? "", card);
         return card;
     }
@@ -153,11 +349,9 @@
     function patchCard(id, patchObj = {}) {
         const el = idToEl.get(id);
         if (!el) return;
-
         const pre = el.querySelector("pre.json");
         let currentObj;
         try { currentObj = JSON.parse(pre.textContent); } catch { currentObj = {}; }
-
         const merged = { ...currentObj, ...patchObj };
         renderHead(el, merged, { isTemp: false });
         renderBody(el, merged);
@@ -175,7 +369,6 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    // ===== 서버 연결 =====
     function ensureConnected(onConnected) {
         if (stompClient && stompClient.connected) {
             onConnected && onConnected();
@@ -183,15 +376,15 @@
         }
         const socket = new SockJS(WS_ENDPOINT);
         stompClient = Stomp.over(socket);
-        // stompClient.debug = null;
-
         stompClient.connect({}, frame => {
             setStatus(`서버 연결됨 (${now()})`);
             showInfo(`서버 연결됨: ${frame}`);
+            logDebug(`Connected: ${frame}`);
             onConnected && onConnected();
         }, error => {
             setStatus(`연결 오류 (${now()}): ${error}`);
             showInfo(`연결 오류: ${error}`);
+            logDebug(`Connect error: ${error}`);
         });
     }
 
@@ -200,14 +393,15 @@
             const res = await fetch(`${HIS_API_BASE}/${encodeURIComponent(roomId)}/messages`, {
                 method: "GET",
                 headers: { "Accept": "application/json" },
-                // mode: "cors" // 필요시
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json(); // { messages: [...] }
+            const data = await res.json();
             const list = Array.isArray(data.messages) ? data.messages : [];
             list.forEach(m => appendCard(m, { isTemp: false }));
+            logDebug(`Loaded ${list.length} history items for ${roomId}`);
         } catch (e) {
             showInfo(`히스토리 로드 실패: ${e.message}`);
+            logDebug(`History error: ${e.message}`);
         }
     }
 
@@ -221,46 +415,39 @@
             try { currentSubscription.unsubscribe(); } catch (_) {}
             currentSubscription = null;
         }
-
         currentRoomId = roomId;
         const destination = `${TOPIC_PREFIX}${roomId}`;
         currentSubscription = stompClient.subscribe(destination, frame => {
             let msg;
             try { msg = JSON.parse(frame.body); } catch { msg = frame.body; }
-
             if (typeof msg !== "object" || msg === null) {
                 showInfo(`[raw] ${frame.body}`);
+                logDebug(`Raw frame: ${frame.body}`);
                 return;
             }
-
-            // 1) 최초 수신(임시)
-            // { id, sender, content, roomId, createdAt:null, editedAt:null, deleted:false }
-            // 2) confirm
-            // { id: realId, tempId: oldId, createdAt, editedAt }
             if (msg.tempId && (msg.createdAt || msg.editedAt)) {
                 const { tempId, id: realId, createdAt, editedAt } = msg;
                 if (idToEl.has(tempId)) {
                     updateCardId(tempId, realId);
                     patchCard(realId, { id: realId, createdAt, editedAt });
                 } else {
-                    // 혹시 임시카드를 놓쳤다면 확정 상태로 새로 추가
                     appendCard({ ...msg, roomId: currentRoomId, deleted: false }, { isTemp: false });
                 }
             } else {
                 appendCard(msg, { isTemp: true });
             }
+            logDebug(`Message received for ${roomId}: ${JSON.stringify(msg)}`);
         });
 
         setStatus(`방 연결: ${destination} (${now()})`);
         showInfo(`방 구독됨: ${destination}`);
+        logDebug(`Subscribed to ${destination}`);
     }
 
-    // ===== 전송 / 종료 =====
     function sendMessage() {
         const sender = qs("sender").value.trim();
         const content = qs("content").value;
         const roomId = currentRoomId || qs("roomId").value.trim();
-
         if (!stompClient || !stompClient.connected) {
             showInfo("먼저 서버에 연결하고 방을 선택하세요.");
             return;
@@ -269,9 +456,9 @@
             showInfo("방 ID를 입력 후 [연결]을 눌러주세요.");
             return;
         }
-
         stompClient.send(APP_SEND, {}, JSON.stringify({ sender, content, roomId }));
         qs("content").value = "";
+        logDebug(`Sent: ${content}`);
     }
 
     function disconnect() {
@@ -284,12 +471,12 @@
             stompClient.disconnect(() => {
                 setStatus(`연결 종료됨 (${now()})`);
                 showInfo("연결 종료됨");
+                logDebug("Disconnected");
             });
             stompClient = null;
         }
     }
 
-    // ===== 이벤트 바인딩 =====
     qs("btnConnectRoom").addEventListener("click", async () => {
         const roomId = qs("roomId").value.trim();
         if (!roomId) return showInfo("방 ID를 입력하세요.");
@@ -304,7 +491,6 @@
         if (e.key === "Enter") sendMessage();
     });
 
-    // 필요 시 자동 서버 연결만 수행(방 연결은 수동)
     ensureConnected();
 </script>
 </body>

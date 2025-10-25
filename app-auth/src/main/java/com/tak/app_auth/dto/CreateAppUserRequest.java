@@ -1,5 +1,6 @@
-package com.tak.app_auth.app_user;
+package com.tak.app_auth.dto;
 
+import com.tak.app_auth.app_user.AppUser;
 import lombok.*;
 
 @Getter
