@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login</title>
+    <style>
+        :root{
+            --bg:#f4f7fb; --card:#ffffff; --primary:#2563eb; --primary-strong:#1e40af;
+            --muted:#6b7280; --danger:#dc2626; --success:#16a34a;
+            --radius:10px; --shadow: 0 6px 18px rgba(16,24,40,0.08);
+        }
+        html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, -apple-system, "Segoe UI", Roboto, Arial;color:#111827;}
+        .wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
+        .nav{width:100%;max-width:720px;display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;}
+        .nav a{display:inline-block;text-decoration:none;padding:8px 12px;border-radius:8px;border:1px solid #eef2ff;color:var(--muted);font-weight:600;}
+        .nav a:hover{background:#eef2ff;}
+        .nav a.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .card{width:100%;max-width:720px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;box-sizing:border-box;display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;}
+        @media (max-width:800px){ .card{ grid-template-columns:1fr; padding:20px; } }
+        h1{margin:0 0 12px 0;font-size:20px;}
+        p.lead{margin:0 0 18px 0;color:var(--muted);font-size:13px;}
+        form{display:flex;flex-direction:column;gap:12px;}
+        label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);}
+        input[type="email"], input[type="password"]{padding:10px 12px;border:1px solid #e6edf3;border-radius:8px;font-size:14px;background:linear-gradient(180deg,#fff,#fcfdff);outline:none;}
+        input:focus{border-color:var(--primary);box-shadow:0 6px 18px rgba(37,99,235,0.08);}
+        .actions{display:flex;gap:10px;align-items:center;margin-top:6px;}
+        button{appearance:none;border:0;background:var(--primary);color:white;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;}
+        button.muted{background:transparent;color:var(--muted);border:1px solid #eef2ff;padding:8px 12px;}
+        .right{min-width:0;padding-left:8px;display:flex;flex-direction:column;gap:12px;}
+        .result{background:#0f172a;color:#e6eefc;border-radius:8px;padding:12px;font-family:ui-monospace, "Roboto Mono", monospace;font-size:13px;white-space:pre-wrap;overflow:auto;max-height:320px;}
+        .status{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:700;}
+        .status.ok{background:rgba(22,163,74,0.12);color:var(--success);}
+        .status.err{background:rgba(220,38,38,0.08);color:var(--danger);}
+        small.hint{color:var(--muted);display:block;margin-top:6px;}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <nav class="nav">
+        <a class="active" href="/auth/login">로그인</a>
+        <a href="/auth/login-test">토큰 검증</a>
+        <a href="/auth/signup">회원 생성</a>
+    </nav>
+
+    <div class="card">
+        <div>
+            <h1>Login</h1>
+            <p class="lead">이메일과 원문 비밀번호(passwordRow)를 입력하고 로그인하세요.</p>
+
+            <form id="loginForm">
+                <label>이메일
+                    <input id="email" type="email" required placeholder="user@example.com" />
+                </label>
+
+                <label>비밀번호
+                    <input id="password" type="password" required placeholder="원문 비밀번호" />
+                    <small class="hint">서버에서는 내부적으로 해시로 비교합니다. 서버에 원문 비밀번호를 보냅니다.</small>
+                </label>
+
+                <div class="actions">
+                    <button type="submit">로그인</button>
+                    <button type="button" class="muted" id="resetBtn">초기화</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="right">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="help">서버 응답</div>
+                <div id="status" class="status">대기</div>
+            </div>
+            <pre id="result" class="result">전송 전...</pre>
+            <div class="help">요청 URL: <code>http://localhost:8084/auth/login</code> · 헤더: <code>Content-Type: application/json</code></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('loginForm');
+    const result = document.getElementById('result');
+    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function extractAccessToken(data) {
+        if (!data || typeof data !== 'object') return null;
+        const keys = ['accessToken', 'token', 'jwt', 'id_token'];
+        for (const k of keys) {
+            if (typeof data[k] === 'string' && data[k].length > 0) return data[k];
+        }
+        if (data.data) return extractAccessToken(data.data);
+        if (data.result) return extractAccessToken(data.result);
+        return null;
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusEl.textContent = '전송 중...'; statusEl.className='status';
+        const payload = {
+            email: document.getElementById('email').value,
+            passwordRow: document.getElementById('password').value
+        };
+
+        try {
+            const res = await fetch('http://localhost:8084/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const text = await res.text();
+            let parsed;
+            try { parsed = JSON.parse(text); } catch (_) { parsed = text; }
+
+            // 응답 표시
+            result.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
+            statusEl.textContent = `HTTP ${res.status}`;
+            statusEl.className = res.ok ? 'status ok' : 'status err';
+
+            // accessToken 추출 및 메모리(sessionStorage) 저장
+            const token = extractAccessToken(parsed);
+            if (token) {
+                sessionStorage.setItem('accessToken', token);
+                console.info('accessToken saved to sessionStorage');
+            }
+        } catch (err) {
+            result.textContent = '요청 실패: ' + err;
+            statusEl.textContent = '오류';
+            statusEl.className = 'status err';
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        form.reset();
+        result.textContent = '전송 전...';
+        statusEl.textContent = '대기';
+        statusEl.className = 'status';
+    });
+</script>
+</body>
+</html>
+

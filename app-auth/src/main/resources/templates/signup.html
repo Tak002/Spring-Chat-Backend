@@ -28,10 +28,16 @@
         .wrap{
             min-height:100vh;
             display:flex;
+            flex-direction:column;
             align-items:center;
             justify-content:center;
             padding:24px;
+            box-sizing:border-box;
         }
+        .nav{width:100%;max-width:720px;display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;}
+        .nav a{display:inline-block;text-decoration:none;padding:8px 12px;border-radius:8px;border:1px solid #eef2ff;color:var(--muted);font-weight:600;}
+        .nav a:hover{background:#eef2ff;}
+        .nav a.active{background:var(--primary);color:#fff;border-color:var(--primary);}
         .card{
             width:100%;
             max-width:720px;
@@ -49,119 +55,50 @@
             .card{ grid-template-columns: 1fr; padding:20px; }
         }
 
-        .left {
-            padding-right:8px;
-        }
-        h1{
-            margin:0 0 12px 0;
-            font-size:20px;
-        }
-        p.lead{
-            margin:0 0 18px 0;
-            color:var(--muted);
-            font-size:13px;
-        }
+        .left { padding-right:8px; }
+        h1{ margin:0 0 12px 0; font-size:20px; }
+        p.lead{ margin:0 0 18px 0; color:var(--muted); font-size:13px; }
 
-        form{
-            display:flex;
-            flex-direction:column;
-            gap:12px;
+        form{ display:flex; flex-direction:column; gap:12px; }
+        label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted); }
+        input[type="email"], input[type="text"], select{
+            padding:10px 12px; border:1px solid #e6edf3; border-radius:8px; font-size:14px; outline:none;
+            background:linear-gradient(180deg,#fff,#fcfdff); transition:box-shadow .12s, border-color .12s;
         }
-        label{
-            display:flex;
-            flex-direction:column;
-            gap:6px;
-            font-size:13px;
-            color:var(--muted);
-        }
-        input[type="email"],
-        input[type="text"],
-        select{
-            padding:10px 12px;
-            border:1px solid #e6edf3;
-            border-radius:8px;
-            font-size:14px;
-            outline:none;
-            background:linear-gradient(180deg,#fff,#fcfdff);
-            transition:box-shadow .12s, border-color .12s;
-        }
-        input:focus, select:focus{
-            border-color:var(--primary);
-            box-shadow:0 6px 18px rgba(37,99,235,0.08);
-        }
-        .actions{
-            display:flex;
-            gap:10px;
-            align-items:center;
-            margin-top:6px;
-        }
+        input:focus, select:focus{ border-color:var(--primary); box-shadow:0 6px 18px rgba(37,99,235,0.08); }
+        .actions{ display:flex; gap:10px; align-items:center; margin-top:6px; }
         button{
-            appearance:none;
-            border:0;
-            background:var(--primary);
-            color:white;
-            padding:10px 14px;
-            border-radius:8px;
-            font-weight:600;
-            cursor:pointer;
-            transition:background .12s, transform .06s;
+            appearance:none; border:0; background:var(--primary); color:white; padding:10px 14px;
+            border-radius:8px; font-weight:600; cursor:pointer; transition:background .12s, transform .06s;
         }
         button:hover{ background:var(--primary-strong); transform:translateY(-1px); }
         button:active{ transform:translateY(0); }
-        .muted-btn{
-            background:transparent;
-            color:var(--muted);
-            border:1px solid #eef2ff;
-            font-weight:600;
-            padding:8px 12px;
-        }
+        .muted-btn{ background:transparent; color:var(--muted); border:1px solid #eef2ff; font-weight:600; padding:8px 12px; }
 
-        .right {
-            min-width:0;
-            padding-left:8px;
-            display:flex;
-            flex-direction:column;
-            gap:12px;
-        }
-        .result {
-            background:#0f172a;
-            color:#e6eefc;
-            border-radius:8px;
-            padding:12px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-            font-size:13px;
-            white-space:pre-wrap;
-            overflow:auto;
-            max-height:320px;
-        }
-        .help {
-            font-size:12px;
-            color:var(--muted);
-        }
-        .status {
-            display:inline-block;
-            padding:6px 8px;
-            border-radius:999px;
-            font-size:12px;
-            font-weight:700;
-        }
+        .right { min-width:0; padding-left:8px; display:flex; flex-direction:column; gap:12px; }
+        .result { background:#0f172a; color:#e6eefc; border-radius:8px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:13px; white-space:pre-wrap; overflow:auto; max-height:320px; }
+        .help { font-size:12px; color:var(--muted); }
+        .status { display:inline-block; padding:6px 8px; border-radius:999px; font-size:12px; font-weight:700; }
         .status.ok { background:rgba(22,163,74,0.12); color:var(--success); }
         .status.err { background:rgba(220,38,38,0.08); color:var(--danger); }
 
-        .field-row{
-            display:flex;
-            gap:12px;
-        }
+        .field-row{ display:flex; gap:12px; }
         .field-row > * { flex:1; }
         small.hint{ color:var(--muted); display:block; margin-top:6px; }
     </style>
 </head>
 <body>
 <div class="wrap">
+    <nav class="nav">
+        <a href="/auth/login">로그인</a>
+        <a href="/auth/login-test">토큰 검증</a>
+        <a class="active" href="/auth/signup">회원 생성</a>
+    </nav>
+
     <div class="card">
         <div class="left">
             <h1>Create App User</h1>
-            <p class="lead">이메일, passwordHash, role 값을 입력하고 생성 버튼을 누르세요.</p>
+            <p class="lead">이메일, password, role 값을 입력하고 생성 버튼을 누르세요.</p>
 
             <form id="createUserForm">
                 <label>
@@ -170,8 +107,8 @@
                 </label>
 
                 <label>
-                    passwordHash
-                    <input id="passwordHash" type="text" required placeholder="$2a$10$..." />
+                    password
+                    <input id="password" type="text" required placeholder="$2a$10$..." />
                     <small class="hint">이미 해시된 비밀번호를 전달하세요 (예: bcrypt 해시)</small>
                 </label>
 
@@ -212,7 +149,7 @@
         statusEl.textContent = '전송 중...'; statusEl.className='status';
         const payload = {
             email: document.getElementById('email').value,
-            passwordHash: document.getElementById('passwordHash').value,
+            passwordRow: document.getElementById('password').value,
             role: document.getElementById('role').value
         };
 
