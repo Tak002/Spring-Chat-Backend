@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-    public static final long REFRESH_TOKEN_VALIDITY_Days = 10; // 10일
+    public final long REFRESH_TOKEN_VALIDITY_Days = TokenUtil.REFRESH_TOKEN_VALIDITY_Days; // 10일
     private final RefreshTokenRepository refreshTokenRepository;
 
     public String issueRefreshToken(AppUser appUser) {

@@ -4,7 +4,7 @@ import com.tak.app_auth.dto.CreateAppUserRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.refreshToken.RefreshTokenService;
 import com.tak.app_auth.util.PasswordHasher;
-import com.tak.app_auth.util.JwtUtil;
+import com.tak.app_auth.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,6 @@ import java.util.Map;
 public class AppUserService {
     private final AppUserRepository appUserRepository;
     private final RefreshTokenService refreshtokenService;
-    private final JwtUtil jwtUtil;
     //todo 이메일, 비밀번호 유효성 검사
     public AppUser createAppUser(CreateAppUserRequest request) {
         if(appUserRepository.existsByEmail(request.getEmail())){
@@ -49,8 +48,8 @@ public class AppUserService {
 
 
     public String loginTest(String token) {
-        if(jwtUtil.validateToken(token)){
-            return jwtUtil.getUserIdFromToken(token);
+        if(TokenUtil.validateAccessToken(token)){
+            return TokenUtil.getUserIdFromToken(token);
         }
         else{
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
@@ -79,7 +78,7 @@ public class AppUserService {
     }
 
     private Map<String, String> generateTokens(AppUser appUser) {
-        String accessToken= jwtUtil.generateToken(String.valueOf(appUser.getId()));
+        String accessToken= TokenUtil.generateAccessToken(String.valueOf(appUser.getId()));
         String refreshTokenRow = refreshtokenService.issueRefreshToken(appUser);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshTokenRow)
                 .httpOnly(true)
