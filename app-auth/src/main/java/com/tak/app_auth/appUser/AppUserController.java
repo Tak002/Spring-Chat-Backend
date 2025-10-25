@@ -1,8 +1,7 @@
-package com.tak.app_auth.app_user;
+package com.tak.app_auth.appUser;
 
 import com.tak.app_auth.dto.CreateAppUserRequest;
 import com.tak.app_auth.dto.LoginRequest;
-import com.tak.app_auth.dto.LoginResponse;
 import com.tak.app_auth.dto.TokenDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -70,12 +69,24 @@ public class AppUserController {
     }
 
     @PostMapping("/logout")
-    public String logout() {
-        return "login 성공";
+    public ResponseEntity<?> logout(@CookieValue("refreshToken") String refreshToken) {
+        String logoutRefreshCookie = appUserService.logout(refreshToken);
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, logoutRefreshCookie)
+                .build();
     }
 
-    @PostMapping("/verify-email")
-    public String verifyEmail() {
-        return "verify-email 성공";
+    @PostMapping("/rotate-refresh-token")
+    public ResponseEntity<?> rotateRefreshToken(@CookieValue String refresh_token) {
+        try {
+            Map<String, String> tokens = appUserService.rotateRefreshToken(refresh_token);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, tokens.get("refreshCookie"))
+                    .body(Map.of("accessToken", tokens.get("accessToken")));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

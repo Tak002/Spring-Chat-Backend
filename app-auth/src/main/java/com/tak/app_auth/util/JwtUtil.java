@@ -1,7 +1,5 @@
 package com.tak.app_auth.util;
 
-import com.tak.app_auth.app_user.AppUser;
-import io.jsonwebtoken.security.SecureDigestAlgorithm;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;

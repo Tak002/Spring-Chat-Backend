@@ -5,4 +5,9 @@ public class PasswordHasher {
     public static String hash(String input) {
         return input;
     }
+
+    //
+    public static String hash256(String input){
+        return input;
+    }
 }

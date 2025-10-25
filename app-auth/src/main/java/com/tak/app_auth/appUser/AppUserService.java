@@ -1,8 +1,8 @@
-package com.tak.app_auth.app_user;
+package com.tak.app_auth.appUser;
 
 import com.tak.app_auth.dto.CreateAppUserRequest;
 import com.tak.app_auth.dto.LoginRequest;
-import com.tak.app_auth.dto.LoginResponse;
+import com.tak.app_auth.refreshToken.RefreshTokenService;
 import com.tak.app_auth.util.PasswordHasher;
 import com.tak.app_auth.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -10,13 +10,13 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class AppUserService {
     private final AppUserRepository appUserRepository;
+    private final RefreshTokenService refreshtokenService;
     private final JwtUtil jwtUtil;
     //todo 이메일, 비밀번호 유효성 검사
     public AppUser createAppUser(CreateAppUserRequest request) {
@@ -43,20 +43,10 @@ public class AppUserService {
         if(!appUser.getPasswordHash().equals(PasswordHasher.hash(request.getPasswordRow()))){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-        // JwtToken 생성
-        String accessToken= jwtUtil.generateToken(String.valueOf(appUser.getId()));
-        // todo Refresh Token 생성
-        String refreshToken = "tempRefreshToken";
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .sameSite("Strict")
-                .maxAge(Duration.ofDays(14))
-                .build();
-
-        return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString());
+        return generateTokens(appUser);
     }
+
+
 
     public String loginTest(String token) {
         if(jwtUtil.validateToken(token)){
@@ -65,5 +55,40 @@ public class AppUserService {
         else{
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
         }
+    }
+
+    public String logout(String refreshToken) {
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(0)
+                .build();
+        return refreshCookie.toString();
+    }
+
+    public Map<String,String> rotateRefreshToken(String oldRefreshToken) {
+        // 기존 리프레시 토큰 검증 및 사용자 조회
+        try {
+            AppUser appUser = refreshtokenService.validateAndGetUser(oldRefreshToken);
+            return generateTokens(appUser);
+        }catch (Exception e){
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+        }
+    }
+
+    private Map<String, String> generateTokens(AppUser appUser) {
+        String accessToken= jwtUtil.generateToken(String.valueOf(appUser.getId()));
+        String refreshTokenRow = refreshtokenService.issueRefreshToken(appUser);
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshTokenRow)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(Duration.ofDays(14))
+                .build();
+
+        return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString());
     }
 }
