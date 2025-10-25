@@ -33,6 +33,10 @@ subprojects {
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
         implementation 'com.fasterxml.jackson.core:jackson-databind'
         implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+        // JWT
+        implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+        runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+        runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     }
 
     // ✅ Spring에서 파라미터 이름 필요할 때 오류 방지(-parameters)

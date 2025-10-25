@@ -11,6 +11,6 @@ import lombok.*;
 @ToString
 public class CreateAppUserRequest {
     private String email;
-    private String passwordHash;
+    private String passwordRow;
     private AppUser.Role role;
 }
