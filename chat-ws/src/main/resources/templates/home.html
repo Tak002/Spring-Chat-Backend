@@ -243,22 +243,27 @@
                 <pre id="debug" style="margin:8px 0 0; white-space:pre-wrap;"></pre>
             </div>
 
-            <div class="muted">요청 엔드포인트: <code>WS: /ws-sockjs</code> · 히스토리 API: <code>/&lt;roomId&gt;/messages</code></div>
+            <div class="muted">
+                요청 엔드포인트:
+                <code id="wsEndpointCode">WS: (계산중...)</code>
+                · 히스토리 API:
+                <code id="historyEndpointCode">(계산중...)</code>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 기존 스크립트 유지 — 디버그 출력을 추가로 기록하도록 변경
-    const WS_API_BASE = "__WS_API_BASE__" === "__" + "WS_API_BASE__"
-        ? "http://localhost:8080"
-        : "__WS_API_BASE__";
+    //
+    // 게이트웨이를 기준으로 동작하도록 수정
+    // - gateway origin (예: http://localhost) 기준으로
+    //   SockJS/STOMP 연결은 `${origin}/ws-sockjs`
+    //   채팅 히스토리는 `${origin}/history/<roomId>/messages`
+    //
+    const GATEWAY_ORIGIN = location.origin;
+    const WS_ENDPOINT = GATEWAY_ORIGIN + "/ws-sockjs";   // SockJS/STOMP entry
+    const HISTORY_BASE = GATEWAY_ORIGIN + "/history";    // REST history base
 
-    const HIS_API_BASE = "__HIS_API_BASE__" === "__" + "HIS_API_BASE__"
-        ? "http://localhost:8081"
-        : "__HIS_API_BASE__";
-
-    const WS_ENDPOINT = WS_API_BASE + "/ws-sockjs";
     const TOPIC_PREFIX = "/topic/";
     const APP_SEND = "/app/chat";
 
@@ -294,11 +299,11 @@
         const head = container.querySelector(".msg-head");
         const state = isTemp ? "TEMP" : (obj.deleted ? "DELETED" : "SAVED");
         head.innerHTML = `
-      <span class="badge room">room: ${obj.roomId ?? currentRoomId}</span>
-      <span class="badge id">id: ${shortId(obj.id)}</span>
-      <span class="badge">${state}</span>
-      <span class="meta-time">createdAt: ${fmtTime(obj.createdAt)}</span>
-    `;
+            <span class="badge room">room: ${obj.roomId ?? currentRoomId}</span>
+            <span class="badge id">id: ${shortId(obj.id)}</span>
+            <span class="badge">${state}</span>
+            <span class="meta-time">createdAt: ${fmtTime(obj.createdAt)}</span>
+        `;
     }
 
     function renderBody(container, obj) {
@@ -316,13 +321,13 @@
         card.className = "msg-card";
         card.dataset.id = obj.id ?? "";
         card.innerHTML = `
-      <div class="msg-head"></div>
-      <div class="msg-body"></div>
-      <details>
-        <summary>자세히 (전체 속성 JSON)</summary>
-        <pre class="json"></pre>
-      </details>
-    `;
+            <div class="msg-head"></div>
+            <div class="msg-body"></div>
+            <details>
+                <summary>자세히 (전체 속성 JSON)</summary>
+                <pre class="json"></pre>
+            </details>
+        `;
         renderHead(card, obj, { isTemp });
         renderBody(card, obj);
         renderJson(card, obj);
@@ -390,7 +395,7 @@
 
     async function loadHistory(roomId) {
         try {
-            const res = await fetch(`${HIS_API_BASE}/${encodeURIComponent(roomId)}/messages`, {
+            const res = await fetch(`${HISTORY_BASE}/${encodeURIComponent(roomId)}/messages`, {
                 method: "GET",
                 headers: { "Accept": "application/json" },
             });
@@ -491,6 +496,17 @@
         if (e.key === "Enter") sendMessage();
     });
 
+    // 화면 오른쪽 정보 영역에 현재 endpoint들 표시
+    const wsEndpointCode = document.getElementById("wsEndpointCode");
+    const historyEndpointCode = document.getElementById("historyEndpointCode");
+    if (wsEndpointCode) {
+        wsEndpointCode.textContent = `WS: ${WS_ENDPOINT}`;
+    }
+    if (historyEndpointCode) {
+        historyEndpointCode.textContent = `${HISTORY_BASE}/{roomId}/messages`;
+    }
+
+    // 자동으로 서버 연결 시도
     ensureConnected();
 </script>
 </body>

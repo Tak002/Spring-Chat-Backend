@@ -12,10 +12,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 @Controller
-@RequestMapping
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AppUserController {
     private final AppUserService appUserService;
+
+    @GetMapping("/")
+    public String home() {
+        return "signup";
+    }
 
     @GetMapping("/signup")
     public String signupPage() {
