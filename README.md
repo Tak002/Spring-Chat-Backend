@@ -8,8 +8,28 @@ STOMP + Redis Pub/Sub 기반의 **실시간 멀티룸 채팅 서버**
 ---
 
 ## 🖼️ **Demo**
-
-<img width="1815" height="671" alt="demo" src="https://github.com/user-attachments/assets/1789bc2f-7a7a-48c9-9b85-085fae18414f" />
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <strong>채팅방 화면</strong><br/>
+      <img src="https://github.com/user-attachments/assets/39ec6655-7ede-4339-88d7-cdfc02305413" alt="채팅방 화면" width="100%" />
+    </td>
+    <td align="center" width="50%">
+      <strong>회원가입 화면</strong><br/>
+      <img src="https://github.com/user-attachments/assets/ecacef1e-eeca-43f0-89c5-5eb5c9b75ca8" alt="회원가입 화면" width="100%" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <strong>로그인 화면</strong><br/>
+      <img src="https://github.com/user-attachments/assets/fcc04a4e-f7c8-43d7-a854-3f28d399cb59" alt="로그인 화면" width="100%" />
+    </td>
+    <td align="center" width="50%">
+      <strong>토큰 검증 화면</strong><br/>
+      <img src="https://github.com/user-attachments/assets/598992f3-c233-4d0f-90cc-968d8a242f28" alt="토큰 검증 화면" width="100%" />
+    </td>
+  </tr>
+</table>
 
 ---
 

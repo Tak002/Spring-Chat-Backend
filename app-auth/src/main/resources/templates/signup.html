@@ -34,10 +34,29 @@
             padding:24px;
             box-sizing:border-box;
         }
-        .nav{width:100%;max-width:720px;display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;}
-        .nav a{display:inline-block;text-decoration:none;padding:8px 12px;border-radius:8px;border:1px solid #eef2ff;color:var(--muted);font-weight:600;}
+        .nav{
+            width:100%;
+            max-width:720px;
+            display:flex;
+            gap:8px;
+            justify-content:flex-end;
+            margin-bottom:12px;
+        }
+        .nav a{
+            display:inline-block;
+            text-decoration:none;
+            padding:8px 12px;
+            border-radius:8px;
+            border:1px solid #eef2ff;
+            color:var(--muted);
+            font-weight:600;
+        }
         .nav a:hover{background:#eef2ff;}
-        .nav a.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .nav a.active{
+            background:var(--primary);
+            color:#fff;
+            border-color:var(--primary);
+        }
         .card{
             width:100%;
             max-width:720px;
@@ -62,25 +81,82 @@
         form{ display:flex; flex-direction:column; gap:12px; }
         label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted); }
         input[type="email"], input[type="text"], select{
-            padding:10px 12px; border:1px solid #e6edf3; border-radius:8px; font-size:14px; outline:none;
-            background:linear-gradient(180deg,#fff,#fcfdff); transition:box-shadow .12s, border-color .12s;
+            padding:10px 12px;
+            border:1px solid #e6edf3;
+            border-radius:8px;
+            font-size:14px;
+            outline:none;
+            background:linear-gradient(180deg,#fff,#fcfdff);
+            transition:box-shadow .12s, border-color .12s;
         }
-        input:focus, select:focus{ border-color:var(--primary); box-shadow:0 6px 18px rgba(37,99,235,0.08); }
-        .actions{ display:flex; gap:10px; align-items:center; margin-top:6px; }
+        input:focus, select:focus{
+            border-color:var(--primary);
+            box-shadow:0 6px 18px rgba(37,99,235,0.08);
+        }
+        .actions{
+            display:flex;
+            gap:10px;
+            align-items:center;
+            margin-top:6px;
+        }
         button{
-            appearance:none; border:0; background:var(--primary); color:white; padding:10px 14px;
-            border-radius:8px; font-weight:600; cursor:pointer; transition:background .12s, transform .06s;
+            appearance:none;
+            border:0;
+            background:var(--primary);
+            color:white;
+            padding:10px 14px;
+            border-radius:8px;
+            font-weight:600;
+            cursor:pointer;
+            transition:background .12s, transform .06s;
         }
-        button:hover{ background:var(--primary-strong); transform:translateY(-1px); }
+        button:hover{
+            background:var(--primary-strong);
+            transform:translateY(-1px);
+        }
         button:active{ transform:translateY(0); }
-        .muted-btn{ background:transparent; color:var(--muted); border:1px solid #eef2ff; font-weight:600; padding:8px 12px; }
+        .muted-btn{
+            background:transparent;
+            color:var(--muted);
+            border:1px solid #eef2ff;
+            font-weight:600;
+            padding:8px 12px;
+        }
 
-        .right { min-width:0; padding-left:8px; display:flex; flex-direction:column; gap:12px; }
-        .result { background:#0f172a; color:#e6eefc; border-radius:8px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:13px; white-space:pre-wrap; overflow:auto; max-height:320px; }
+        .right {
+            min-width:0;
+            padding-left:8px;
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+        .result {
+            background:#0f172a;
+            color:#e6eefc;
+            border-radius:8px;
+            padding:12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+            font-size:13px;
+            white-space:pre-wrap;
+            overflow:auto;
+            max-height:320px;
+        }
         .help { font-size:12px; color:var(--muted); }
-        .status { display:inline-block; padding:6px 8px; border-radius:999px; font-size:12px; font-weight:700; }
-        .status.ok { background:rgba(22,163,74,0.12); color:var(--success); }
-        .status.err { background:rgba(220,38,38,0.08); color:var(--danger); }
+        .status {
+            display:inline-block;
+            padding:6px 8px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+        }
+        .status.ok {
+            background:rgba(22,163,74,0.12);
+            color:var(--success);
+        }
+        .status.err {
+            background:rgba(220,38,38,0.08);
+            color:var(--danger);
+        }
 
         .field-row{ display:flex; gap:12px; }
         .field-row > * { flex:1; }
@@ -133,7 +209,12 @@
                 <div id="status" class="status">대기</div>
             </div>
             <pre id="result" class="result">전송 전...</pre>
-            <div class="help">요청 URL: <code>http://localhost:8084/auth/signup</code> · 헤더: <code>Content-Type: application/json</code></div>
+            <div class="help">
+                요청 URL:
+                <code id="reqUrlCode">http://localhost/auth/signup</code>
+                · 헤더:
+                <code>Content-Type: application/json</code>
+            </div>
         </div>
     </div>
 </div>
@@ -143,10 +224,20 @@
     const result = document.getElementById('result');
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
+    const reqUrlCode = document.getElementById('reqUrlCode');
+
+    // 게이트웨이에서 노출되는 /auth/signup 으로 요청 보내도록 고정하되,
+    // 호스트/포트는 현재 페이지 origin (ex: http://localhost) 를 그대로 사용
+    const SIGNUP_ENDPOINT = location.origin + '/auth/signup';
+
+    // 화면 안내 텍스트도 현재 origin 기준으로 세팅
+    reqUrlCode.textContent = SIGNUP_ENDPOINT;
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        statusEl.textContent = '전송 중...'; statusEl.className='status';
+        statusEl.textContent = '전송 중...';
+        statusEl.className='status';
+
         const payload = {
             email: document.getElementById('email').value,
             passwordRow: document.getElementById('password').value,
@@ -154,7 +245,7 @@
         };
 
         try {
-            const res = await fetch('http://localhost:8084/auth/signup', {
+            const res = await fetch(SIGNUP_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -164,7 +255,11 @@
             let parsed;
             try { parsed = JSON.parse(text); } catch (_) { parsed = text; }
 
-            result.textContent = `${typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed}`;
+            result.textContent =
+                (typeof parsed === 'object')
+                    ? JSON.stringify(parsed, null, 2)
+                    : parsed;
+
             statusEl.textContent = `HTTP ${res.status}`;
             statusEl.className = res.ok ? 'status ok' : 'status err';
         } catch (err) {

@@ -11,13 +11,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.stream.Collectors;
-
 @Controller
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AppUserController {
     private final AppUserService appUserService;
+
+    @GetMapping("/")
+    public String home() {
+        return "signup";
+    }
 
     @GetMapping("/signup")
     public String signupPage() {

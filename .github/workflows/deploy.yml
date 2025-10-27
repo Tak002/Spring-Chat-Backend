@@ -34,25 +34,6 @@ jobs:
             repo_name: app-auth
     steps:
       - uses: actions/checkout@v5
-      - name: Inject WebSocket endpoint to index.html
-        run: |
-          WS_API_BASE="${{ secrets.WS_API_BASE }}"
-          HIS_API_BASE="${{ secrets.HIS_API_BASE }}"
-          FILE=./chat-ws/src/main/resources/static/index.html
-          
-          if [ -n "$WS_API_BASE" ]; then
-            echo "Injecting WS_API_BASE=$WS_API_BASE into $FILE"
-            sed -i "s|__WS_API_BASE__|$WS_API_BASE|g" "$FILE"
-          else
-            echo "[WARN] WS_API_BASE not set; keeping default (localhost)."
-          fi
-          if [ -n "$HIS_API_BASE" ]; then
-            echo "Injecting HIS_API_BASE=$HIS_API_BASE into $FILE"
-            sed -i "s|__HIS_API_BASE__|$HIS_API_BASE|g" "$FILE"
-          else
-            echo "[WARN] HIS_API_BASE not set; keeping default (localhost)."
-          fi
-
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -144,7 +125,7 @@ jobs:
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull  \
               chat-ws chat-history app-service app-media app-auth
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate \
-              postgres redis
+              postgres redis reverse-proxy
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps \
               chat-ws chat-history app-service app-media app-auth
             docker image prune -f
