@@ -69,6 +69,8 @@ public class AppUserController {
         }
     }
 
+    
+//   todo 로그아웃시 access token도 무효화하기
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@CookieValue("refreshToken") String refreshToken) {
         String logoutRefreshCookie = appUserService.logout(refreshToken);

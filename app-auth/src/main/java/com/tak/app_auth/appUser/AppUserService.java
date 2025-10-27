@@ -76,6 +76,7 @@ public class AppUserService {
         return generateTokens(appUser);
     }
 
+    // todo 지금은 refresh token까지 모두 재발급하고 있음. refresh token의 유효기간에 따라 access token만 재발급하도록 변경
     private Map<String, String> generateTokens(AppUser appUser) {
         String accessToken= TokenUtil.generateAccessToken(String.valueOf(appUser.getId()));
         String refreshTokenRow = refreshtokenService.issueRefreshToken(appUser);
