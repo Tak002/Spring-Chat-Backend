@@ -79,7 +79,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "infra/docker-compose.base.yml,infra/docker-compose.prod.yml, infra/nginx.conf"
+          source: "infra/docker-compose.base.yml,infra/docker-compose.prod.yml,infra/nginx.conf"
           target: "/opt/chat/"
           strip_components: 1
           overwrite: true
