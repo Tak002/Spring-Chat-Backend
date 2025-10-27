@@ -125,7 +125,7 @@ jobs:
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull  \
               chat-ws chat-history app-service app-media app-auth
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate \
-              postgres redis
+              postgres redis reverse-proxy
             docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps \
               chat-ws chat-history app-service app-media app-auth
             docker image prune -f
