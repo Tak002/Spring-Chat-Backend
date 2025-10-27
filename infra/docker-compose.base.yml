@@ -49,7 +49,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8080"]
+    expose:
+      - "8080"
     restart: unless-stopped
 
   chat-history:
@@ -67,7 +68,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8080"]
+    expose:
+      - "8080"
     restart: unless-stopped
 
   app-service:
@@ -76,13 +78,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
       SPRING_DATASOURCE_USERNAME: localUser
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
-    ports: ["8080"]
+    expose:
+      - "8080"
     restart: unless-stopped
 
   app-media:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-    ports: ["8080"]
+    expose:
+      - "8080"
     restart: unless-stopped
 
   app-auth:
@@ -91,5 +95,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
       SPRING_DATASOURCE_USERNAME: localUser
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
-    ports: ["8080"]
+    expose:
+      - "8080"
     restart: unless-stopped
