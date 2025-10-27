@@ -6,26 +6,144 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Token Verify</title>
     <style>
-        :root{--bg:#f4f7fb;--card:#fff;--primary:#2563eb;--muted:#6b7280;--radius:10px;--shadow:0 6px 18px rgba(16,24,40,0.08);}
-        html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, -apple-system, "Segoe UI", Roboto, Arial;color:#111827;}
-        .wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
-        .nav{width:100%;max-width:720px;display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;}
-        .nav a{display:inline-block;text-decoration:none;padding:8px 12px;border-radius:8px;border:1px solid #eef2ff;color:var(--muted);font-weight:600;}
-        .nav a:hover{background:#eef2ff;}
-        .nav a.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-        .card{width:100%;max-width:720px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;box-sizing:border-box;}
-        h1{margin:0 0 12px 0;font-size:20px;}
-        p.lead{margin:0 0 18px 0;color:var(--muted);font-size:13px;}
-        form{display:flex;flex-direction:column;gap:12px;}
-        label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);}
-        input[type="text"]{padding:10px 12px;border:1px solid #e6edf3;border-radius:8px;font-size:14px;background:linear-gradient(180deg,#fff,#fcfdff);outline:none;}
-        .actions{display:flex;gap:10px;align-items:center;margin-top:6px;}
-        button{appearance:none;border:0;background:var(--primary);color:white;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;}
-        .result{background:#0f172a;color:#e6eefc;border-radius:8px;padding:12px;font-family:ui-monospace, "Roboto Mono", monospace;font-size:13px;white-space:pre-wrap;overflow:auto;max-height:320px;}
-        .status{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:700;}
-        .status.ok{background:rgba(22,163,74,0.12);color:#16a34a;}
-        .status.err{background:rgba(220,38,38,0.08);color:#dc2626;}
-        small.hint{color:var(--muted);display:block;margin-top:6px;}
+        :root{
+            --bg:#f4f7fb;
+            --card:#fff;
+            --primary:#2563eb;
+            --muted:#6b7280;
+            --radius:10px;
+            --shadow:0 6px 18px rgba(16,24,40,0.08);
+        }
+        html,body{
+            height:100%;
+            margin:0;
+            background:var(--bg);
+            font-family:Inter, -apple-system, "Segoe UI", Roboto, Arial;
+            color:#111827;
+        }
+        .wrap{
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            box-sizing:border-box;
+        }
+        .nav{
+            width:100%;
+            max-width:720px;
+            display:flex;
+            gap:8px;
+            justify-content:flex-end;
+            margin-bottom:12px;
+        }
+        .nav a{
+            display:inline-block;
+            text-decoration:none;
+            padding:8px 12px;
+            border-radius:8px;
+            border:1px solid #eef2ff;
+            color:var(--muted);
+            font-weight:600;
+        }
+        .nav a:hover{ background:#eef2ff; }
+        .nav a.active{
+            background:var(--primary);
+            color:#fff;
+            border-color:var(--primary);
+        }
+        .card{
+            width:100%;
+            max-width:720px;
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            padding:28px;
+            box-sizing:border-box;
+        }
+        h1{
+            margin:0 0 12px 0;
+            font-size:20px;
+        }
+        p.lead{
+            margin:0 0 18px 0;
+            color:var(--muted);
+            font-size:13px;
+        }
+        form{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+        label{
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            font-size:13px;
+            color:var(--muted);
+        }
+        input[type="text"]{
+            padding:10px 12px;
+            border:1px solid #e6edf3;
+            border-radius:8px;
+            font-size:14px;
+            background:linear-gradient(180deg,#fff,#fcfdff);
+            outline:none;
+        }
+        .actions{
+            display:flex;
+            gap:10px;
+            align-items:center;
+            margin-top:6px;
+        }
+        button{
+            appearance:none;
+            border:0;
+            background:var(--primary);
+            color:white;
+            padding:10px 14px;
+            border-radius:8px;
+            font-weight:600;
+            cursor:pointer;
+        }
+        button.muted{
+            background:transparent;
+            color:var(--muted);
+            border:1px solid #eef2ff;
+            padding:8px 12px;
+        }
+        .result{
+            background:#0f172a;
+            color:#e6eefc;
+            border-radius:8px;
+            padding:12px;
+            font-family:ui-monospace, "Roboto Mono", monospace;
+            font-size:13px;
+            white-space:pre-wrap;
+            overflow:auto;
+            max-height:320px;
+        }
+        .status{
+            display:inline-block;
+            padding:6px 8px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+        }
+        .status.ok{
+            background:rgba(22,163,74,0.12);
+            color:#16a34a;
+        }
+        .status.err{
+            background:rgba(220,38,38,0.08);
+            color:#dc2626;
+        }
+        small.hint{
+            color:var(--muted);
+            display:block;
+            margin-top:6px;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +161,10 @@
         <form id="verifyForm">
             <label>토큰
                 <input id="token" type="text" required placeholder="토큰을 붙여넣기" />
-                <small class="hint">서버 엔드포인트: <code>http://localhost:8084/auth/login-test</code></small>
+                <small class="hint">
+                    서버 엔드포인트:
+                    <code id="verifyEndpointCode">(계산중...)</code>
+                </small>
             </label>
 
             <div class="actions">
@@ -61,7 +182,12 @@
         <!-- 추가: /auth/token-test 호출 섹션 -->
         <div style="margin-top:20px;border-top:1px solid #eef2ff;padding-top:16px;">
             <h2 style="margin:0 0 8px 0;font-size:16px;">Token Test (/auth/token-test)</h2>
-            <p class="lead">`sessionStorage`의 `accessToken`을 헤더로 전송하고, 쿠키(`refresh_token`)는 포함합니다.</p>
+            <p class="lead">
+                sessionStorage의 accessToken을 헤더로 전송하고, 쿠키(refresh_token)는 포함합니다.
+                <br />
+                요청 엔드포인트:
+                <code id="tokenTestEndpointCode">(계산중...)</code>
+            </p>
             <div class="actions">
                 <button type="button" id="tokenTestBtn">토큰 테스트 호출</button>
                 <button type="button" id="showTokenBtn" class="muted">저장된 accessToken 보기</button>
@@ -77,35 +203,67 @@
 </div>
 
 <script>
+    // 공통 base: 게이트웨이 기준으로 /auth 아래에 있는 엔드포인트
+    const AUTH_BASE = location.origin + '/auth';
+
+    // DOM refs
     const form = document.getElementById('verifyForm');
     const result = document.getElementById('result');
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
 
+    const verifyEndpointCode = document.getElementById('verifyEndpointCode');
+    const tokenTestEndpointCode = document.getElementById('tokenTestEndpointCode');
+
+    const tokenTestBtn = document.getElementById('tokenTestBtn');
+    const showTokenBtn = document.getElementById('showTokenBtn');
+    const tokenTestStatus = document.getElementById('tokenTestStatus');
+    const tokenTestResult = document.getElementById('tokenTestResult');
+
+    // 실제 사용될 엔드포인트
+    const VERIFY_ENDPOINT = AUTH_BASE + '/login-test';
+    const TOKEN_TEST_ENDPOINT = AUTH_BASE + '/token-test';
+
+    // 표시용 코드 영역 업데이트 (호스트/포트 자동 반영)
+    verifyEndpointCode.textContent = VERIFY_ENDPOINT;
+    tokenTestEndpointCode.textContent = TOKEN_TEST_ENDPOINT;
+
     // util: 안전한 JSON 파싱
     function safeParse(text) {
         try { return JSON.parse(text); } catch (_) { return text; }
     }
+
     function getStoredAccessToken() {
-        try { return sessionStorage.getItem('accessToken') || ''; } catch (_) { return ''; }
+        try { return sessionStorage.getItem('accessToken') || ''; }
+        catch (_) { return ''; }
     }
 
-    // 기존: /auth/login-test (본문/헤더로 토큰 전달)
+    // 1) /auth/login-test → 토큰 검증
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        statusEl.textContent = '전송 중...'; statusEl.className='status';
+        statusEl.textContent = '전송 중...';
+        statusEl.className='status';
+
         const token = document.getElementById('token').value.trim();
 
         try {
-            const res = await fetch('http://localhost:8084/auth/login-test', {
+            const res = await fetch(VERIFY_ENDPOINT, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
                 body: JSON.stringify({ token })
             });
-            const text = await res.text();
-            const parsed = safeParse(text);
 
-            result.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
+            const raw = await res.text();
+            const parsed = safeParse(raw);
+
+            result.textContent =
+                (typeof parsed === 'object')
+                    ? JSON.stringify(parsed, null, 2)
+                    : parsed;
+
             statusEl.textContent = `HTTP ${res.status}`;
             statusEl.className = res.ok ? 'status ok' : 'status err';
         } catch (err) {
@@ -118,19 +276,15 @@
     resetBtn.addEventListener('click', () => {
         form.reset();
         result.textContent = '전송 전...';
-        statusEl.textContent = '대기';
+        statusEl.textContent = '대기'
         statusEl.className = 'status';
     });
 
-    // 추가: /auth/token-test (헤더 accessToken, 쿠키 포함)
-    const tokenTestBtn = document.getElementById('tokenTestBtn');
-    const showTokenBtn = document.getElementById('showTokenBtn');
-    const tokenTestStatus = document.getElementById('tokenTestStatus');
-    const tokenTestResult = document.getElementById('tokenTestResult');
-
+    // 2) /auth/token-test → 세션에 저장된 accessToken으로 호출
     tokenTestBtn.addEventListener('click', async () => {
         const accessToken = getStoredAccessToken();
-        tokenTestStatus.textContent = '전송 중...'; tokenTestStatus.className='status';
+        tokenTestStatus.textContent = '전송 중...';
+        tokenTestStatus.className='status';
 
         if (!accessToken) {
             tokenTestResult.textContent = 'sessionStorage에 accessToken이 없습니다.';
@@ -140,15 +294,23 @@
         }
 
         try {
-            const res = await fetch('http://localhost:8084/auth/token-test', {
+            const res = await fetch(TOKEN_TEST_ENDPOINT, {
                 method: 'GET',
-                headers: { 'accessToken': accessToken },
-                credentials: 'include' // refresh_token 쿠키 포함
+                headers: {
+                    'accessToken': accessToken
+                },
+                // gateway(/auth/...)와 동일 origin에서 호출하면 쿠키도 같이 보낼 수 있음
+                credentials: 'include'
             });
-            const text = await res.text();
-            const parsed = safeParse(text);
 
-            tokenTestResult.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
+            const raw = await res.text();
+            const parsed = safeParse(raw);
+
+            tokenTestResult.textContent =
+                (typeof parsed === 'object')
+                    ? JSON.stringify(parsed, null, 2)
+                    : parsed;
+
             tokenTestStatus.textContent = `HTTP ${res.status}`;
             tokenTestStatus.className = res.ok ? 'status ok' : 'status err';
         } catch (err) {
@@ -158,11 +320,18 @@
         }
     });
 
+    // 저장된 accessToken 보기
     showTokenBtn.addEventListener('click', () => {
         const t = getStoredAccessToken();
-        tokenTestResult.textContent = t ? ('accessToken: ' + t) : 'sessionStorage에 accessToken이 없습니다.';
-        tokenTestStatus.textContent = t ? '표시' : '토큰 없음';
-        tokenTestStatus.className = t ? 'status ok' : 'status err';
+        if (t) {
+            tokenTestResult.textContent = 'accessToken: ' + t;
+            tokenTestStatus.textContent = '표시';
+            tokenTestStatus.className = 'status ok';
+        } else {
+            tokenTestResult.textContent = 'sessionStorage에 accessToken이 없습니다.';
+            tokenTestStatus.textContent = '토큰 없음';
+            tokenTestStatus.className = 'status err';
+        }
     });
 </script>
 </body>

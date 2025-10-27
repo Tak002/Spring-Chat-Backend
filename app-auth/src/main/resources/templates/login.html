@@ -71,7 +71,12 @@
                 <div id="status" class="status">대기</div>
             </div>
             <pre id="result" class="result">전송 전...</pre>
-            <div class="help">요청 URL: <code>http://localhost:8084/auth/login</code> · 헤더: <code>Content-Type: application/json</code></div>
+            <div class="help">
+                요청 URL:
+                <code id="reqUrlCode">http://localhost/auth/login</code>
+                · 헤더:
+                <code>Content-Type: application/json</code>
+            </div>
         </div>
     </div>
 </div>
@@ -81,6 +86,14 @@
     const result = document.getElementById('result');
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
+    const reqUrlCode = document.getElementById('reqUrlCode');
+
+    // 게이트웨이 기준으로 항상 /auth/login으로 보내되,
+    // 호스트/포트는 현재 보고 있는 origin을 그대로 사용
+    const loginEndpoint = `${location.origin}/auth/login`;
+
+    // 화면에 표시되는 "요청 URL:" 안내 텍스트도 동적으로 현재 origin으로 맞춰줌
+    reqUrlCode.textContent = loginEndpoint;
 
     function extractAccessToken(data) {
         if (!data || typeof data !== 'object') return null;
@@ -95,14 +108,16 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        statusEl.textContent = '전송 중...'; statusEl.className='status';
+        statusEl.textContent = '전송 중...';
+        statusEl.className = 'status';
+
         const payload = {
             email: document.getElementById('email').value,
             passwordRow: document.getElementById('password').value
         };
 
         try {
-            const res = await fetch('http://localhost:8084/auth/login', {
+            const res = await fetch(loginEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -113,7 +128,10 @@
             try { parsed = JSON.parse(text); } catch (_) { parsed = text; }
 
             // 응답 표시
-            result.textContent = typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed;
+            result.textContent = (typeof parsed === 'object')
+                ? JSON.stringify(parsed, null, 2)
+                : parsed;
+
             statusEl.textContent = `HTTP ${res.status}`;
             statusEl.className = res.ok ? 'status ok' : 'status err';
 
@@ -139,4 +157,3 @@
 </script>
 </body>
 </html>
-

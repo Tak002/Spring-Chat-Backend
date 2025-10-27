@@ -11,10 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.stream.Collectors;
-
 @Controller
-@RequestMapping("/auth")
+@RequestMapping
 @RequiredArgsConstructor
 public class AppUserController {
     private final AppUserService appUserService;
