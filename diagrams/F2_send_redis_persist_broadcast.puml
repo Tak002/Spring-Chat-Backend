@@ -1,0 +1,35 @@
+@startuml F2_send_redis_persist_broadcast
+title F2. 메시지 전송/중계/저장/브로드캐스트
+
+actor User as Sender
+participant "chat-ws\n(Instance A)" as WSA
+participant "Redis\n(Pub/Sub)" as REDIS
+participant "chat-history\n(Subscriber API)" as HIST
+database "PostgreSQL\n(chat_message)" as PG
+participant "chat-ws\n(Instance B..N)" as WSB
+actor "Other Clients\n(Subscribers)" as Subs
+
+== SEND ==
+Sender -> WSA: STOMP SEND\ndestination:/app/rooms.{roomId}.send\nbody:{text, attachments?, clientMsgId}
+WSA -> WSA: 인증/멤버십/레이트리밋 검사
+alt 실패(권한/밸리데이션)
+  WSA --> Sender: ERROR {code:"BAD_REQUEST|FORBIDDEN"}
+  return
+end
+
+== Fan-out via Redis ==
+WSA -> REDIS: PUBLISH channel=room.{roomId}\nmessage:{senderId, text, ts, clientMsgId}
+
+== 영구 저장 ==
+HIST -> REDIS: SUBSCRIBE room.{roomId}
+REDIS --> HIST: message payload
+HIST -> PG: INSERT chat_message(room_id, sender_id, text, ts, ...)\nRETURNING message_id
+HIST --> REDIS: PUBLISH room.{roomId}.persisted\n{messageId, serverTs}
+
+== 브로드캐스트 ==
+WSA -> WSA: 로컬 구독자에게 전달
+REDIS --> WSB: room.{roomId} payload (fan-out)
+WSB -> Subs: STOMP MESSAGE\ndestination:/topic/rooms.{roomId}\nbody:{messageId?, text, sender, ts}
+WSA --> Sender: (선택) RECEIPT or echo with server fields
+
+@enduml

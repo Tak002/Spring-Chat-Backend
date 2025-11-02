@@ -1,0 +1,25 @@
+@startuml B3_get_public_profile
+title B3. 사용자 공개 프로필 조회 (GET /api/users/{userId})
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(User DB)" as PG
+
+== 요청 ==
+User -> SVC: GET /api/users/{userId}\n[viewer=me 선택]
+
+== 조회 & 가시성 체크 ==
+SVC -> PG: SELECT id, name, department, visibility, status\nFROM users WHERE id=:userId
+alt 미존재/탈퇴
+  SVC --> User: 404 NOT_FOUND
+  return
+end
+
+alt 프로필 비공개(FRIENDS/PRIVATE 등) & 권한 없음
+  SVC --> User: 403 FORBIDDEN
+  return
+end
+
+== 응답 ==
+SVC --> User: 200 OK\n{success:true, data:{ id, name, department, visibility }}
+@enduml

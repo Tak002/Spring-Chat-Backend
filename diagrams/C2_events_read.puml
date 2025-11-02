@@ -1,0 +1,21 @@
+@startuml C2_events_read
+title C2. 이벤트 목록/상세 조회
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(Event)" as PG
+
+== 목록 ==
+User -> SVC: GET /api/events?sort=latest&page=1&size=20&tag=전시
+SVC -> PG: SELECT ... FROM events WHERE tag=... ORDER BY created_at DESC LIMIT/OFFSET
+SVC --> User: 200 OK {success:true, data:[...]}
+
+== 상세 ==
+User -> SVC: GET /api/events/{id}
+SVC -> PG: SELECT * FROM events WHERE id=...
+alt 미존재
+  SVC --> User: 404 NOT_FOUND
+  return
+end
+SVC --> User: 200 OK {success:true, data:{...}}
+@enduml

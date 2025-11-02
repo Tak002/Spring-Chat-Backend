@@ -1,0 +1,29 @@
+@startuml C6_tags
+title C6. 태그 목록/등록/삭제
+
+actor User
+actor Admin
+participant "app-service" as SVC
+database "PostgreSQL\n(Tag)" as PG
+
+== 목록 ==
+User -> SVC: GET /api/tags?target=events|meetings
+SVC -> PG: SELECT tags WHERE target=...
+SVC --> User: 200 OK {success:true, data:[...]}
+
+== 등록 (admin) ==
+Admin -> SVC: POST /api/tags\n{target, name}
+SVC -> SVC: 관리자 권한 확인
+alt 권한 없음
+  SVC --> Admin: 403 FORBIDDEN
+  return
+end
+SVC -> PG: INSERT tag (target, name)
+SVC --> Admin: 201 CREATED {success:true}
+
+== 삭제 (admin) ==
+Admin -> SVC: DELETE /api/tags/{id}
+SVC -> SVC: 관리자 권한 확인
+SVC -> PG: DELETE FROM tag WHERE id=...
+SVC --> Admin: 204 NO_CONTENT
+@enduml

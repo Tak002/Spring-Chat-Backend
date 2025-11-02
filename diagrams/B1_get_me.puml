@@ -1,0 +1,27 @@
+@startuml B1_get_me
+title B1. 내 정보 조회 (GET /api/users/me)
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(User DB)" as PG
+
+== 요청 ==
+User -> SVC: GET /api/users/me\nAuthorization: Bearer accessToken
+
+== 검증 ==
+SVC -> SVC: 액세스 토큰 검증(서명/만료)
+alt 토큰 없음/만료
+  SVC --> User: 401 UNAUTHORIZED\n{success:false, code:"UNAUTHORIZED"}
+  return
+end
+
+== 조회 ==
+SVC -> PG: SELECT * FROM users WHERE id = :subjectId AND status != 'DEACTIVATED'
+alt 미존재/탈퇴
+  SVC --> User: 404 NOT_FOUND\n{success:false, code:"NOT_FOUND"}
+  return
+end
+
+== 응답 ==
+SVC --> User: 200 OK\n{success:true, data:{ id, email, name, bio, profileImageId, visibility }}
+@enduml

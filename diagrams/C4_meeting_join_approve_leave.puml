@@ -1,0 +1,33 @@
+@startuml C4_meeting_join_approve_leave
+title C4. 미팅 참여 요청·승인·탈퇴 (수정 필요)
+
+actor User as Applicant
+actor Host
+participant "app-service" as SVC
+database "PostgreSQL\n(Meeting/Member/Form)" as PG
+
+== 참여 요청 ==
+Applicant -> SVC: POST /api/meetings/{id}/join\n{answers:[{questionId, value}]}
+SVC -> PG: SELECT meeting, rules, join_form
+alt 조건 불일치/검증 실패
+  SVC --> Applicant: 400 BAD_REQUEST
+  return
+end
+SVC -> PG: INSERT pending_membership(applicant, meetingId, answers)
+SVC --> Applicant: 202 ACCEPTED {success:true}
+
+== 호스트 승인 ==
+Host -> SVC: POST /api/meetings/{id}/approve/{userId}
+SVC -> PG: CHECK host ownership
+alt 권한 없음
+  SVC --> Host: 403 FORBIDDEN
+  return
+end
+SVC -> PG: MOVE pending -> members (capacity check)
+SVC --> Host: 200 OK {success:true}
+
+== 탈퇴 ==
+Applicant -> SVC: POST /api/meetings/{id}/leave
+SVC -> PG: DELETE FROM members WHERE meeting_id=:id AND user_id=:me
+SVC --> Applicant: 200 OK {success:true}
+@enduml

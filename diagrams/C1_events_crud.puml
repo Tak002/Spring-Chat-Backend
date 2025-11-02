@@ -1,0 +1,33 @@
+@startuml C1_events_crud
+title C1. 이벤트 생성/수정/삭제
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(Event)" as PG
+
+== 생성 ==
+User -> SVC: POST /api/events\n{title, description, startAt, endAt, place, tags[], thumbnailId}
+SVC -> SVC: 토큰/바디 검증
+SVC -> PG: INSERT event (...)
+alt 유효성 실패
+  SVC --> User: 400 BAD_REQUEST
+  return
+end
+SVC --> User: 201 CREATED {success:true, data:{id:"e_123"}}
+
+== 수정 ==
+User -> SVC: PATCH /api/events/{id}
+SVC -> SVC: 권한 확인(owner/admin)
+alt 권한 없음
+  SVC --> User: 403 FORBIDDEN
+  return
+end
+SVC -> PG: UPDATE event SET ...
+SVC --> User: 200 OK {success:true}
+
+== 삭제 ==
+User -> SVC: DELETE /api/events/{id}
+SVC -> SVC: 권한 확인(owner/admin)
+SVC -> PG: DELETE FROM event WHERE id=...
+SVC --> User: 204 NO_CONTENT
+@enduml

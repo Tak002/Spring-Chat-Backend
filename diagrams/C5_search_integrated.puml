@@ -1,0 +1,13 @@
+@startuml C5_search_integrated
+title C5. 통합 검색 (이벤트+미팅)
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(Event/Meeting)" as PG
+
+User -> SVC: GET /api/search?keyword=전시&target=events,meetings&tag=전시&size=10
+SVC -> SVC: 파라미터 검증(허용 target/size)
+SVC -> PG: SELECT events WHERE keyword/tag ...
+SVC -> PG: SELECT meetings WHERE keyword/tag ...
+SVC --> User: 200 OK {success:true, data:{events:[...], meetings:[...]}}
+@enduml

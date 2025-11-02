@@ -1,0 +1,13 @@
+@startuml F3_history_fetch_and_readmark
+title F3. 히스토리 조회 & 읽음 마크
+
+actor User
+participant "chat-history\n(REST)" as HIST
+database "PostgreSQL\n(chat_message, last_read)" as PG
+
+== 히스토리 페이지 조회 ==
+User -> HIST: GET /api/chat/rooms/{roomId}/messages\n?before=2025-11-02T12:34:56Z&size=50
+HIST -> PG: SELECT messages WHERE room_id=:id AND ts<:before\nORDER BY ts DESC LIMIT :size
+HIST --> User: 200 OK {items:[...], nextBefore: "...", total?}
+
+@enduml

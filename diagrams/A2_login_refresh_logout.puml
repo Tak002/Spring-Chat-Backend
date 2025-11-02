@@ -1,0 +1,38 @@
+@startuml A2_login_refresh_logout
+title A2. 로그인/재발급/로그아웃 — NGINX 제외
+
+actor User
+participant "app-auth" as AUTH
+database "PostgreSQL\n(User DB)" as PG
+
+== 1) 로그인 ==
+User -> AUTH: POST /auth/login\n{ email, password }
+AUTH -> PG: SELECT user by email
+alt 계정 미존재 or 비밀번호 불일치
+  AUTH --> User: 401 Unauthorized\n{ code:"BAD_CREDENTIALS" }
+  return
+end
+alt 계정 비활성/탈퇴
+  AUTH --> User: 403 Forbidden\n{ code:"ACCOUNT_INACTIVE" }
+  return
+end
+
+AUTH -> AUTH: accessToken 발급(JWT)
+AUTH -> AUTH: refreshToken 발급(JWT, 회전용 jti)
+AUTH --> User: 200 OK\nBody { accessToken, user }\nSet-Cookie: refreshToken=...;\n HttpOnly; Secure; SameSite=Lax; Path=/auth
+
+== 2) 토큰 재발급 ==
+User -> AUTH: POST /auth/token/refresh\n(Cookie: refreshToken)
+AUTH -> AUTH: refresh 서명/만료/jti 검증
+alt 회전 위반/위조/만료
+  AUTH --> User: 409 Conflict or 401\n{ code:"ROTATION_VIOLATION" }
+  return
+end
+AUTH -> AUTH: 새 accessToken/refreshToken 발급(회전)
+AUTH --> User: 200 OK\nBody { accessToken }\nSet-Cookie: refreshToken=... (교체)
+
+== 3) 로그아웃 ==
+User -> AUTH: POST /auth/logout
+AUTH -> AUTH: refreshToken 무효화(블랙리스트/내부검증)
+AUTH --> User: 204 No Content\nSet-Cookie: refreshToken=; Max-Age=0; Path=/auth
+@enduml
