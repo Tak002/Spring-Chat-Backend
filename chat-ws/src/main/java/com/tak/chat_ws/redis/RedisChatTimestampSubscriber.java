@@ -1,8 +1,8 @@
 package com.tak.chat_ws.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tak.common.commonDto.pubsub.ChatTimestampPubSubDto;
-import com.tak.common.commonDto.receive.ChatTimestampReceiveDto;
+import com.tak.common.chat.pubsub.ChatTimestampPubSubDto;
+import com.tak.common.chat.receive.ChatTimestampReceiveDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;

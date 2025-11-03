@@ -1,6 +1,6 @@
 package com.tak.chat_history.redis;
 
-import com.tak.common.commonDto.pubsub.ChatTimestampPubSubDto;
+import com.tak.common.chat.pubsub.ChatTimestampPubSubDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.tak.chat_ws.chat;
 
-import com.tak.common.commonDto.pubsub.ChatMessagePubSubDto;
-import com.tak.common.commonDto.send.ChatMessageSendDto;
+import com.tak.common.chat.pubsub.ChatMessagePubSubDto;
+import com.tak.common.chat.send.ChatMessageSendDto;
 import com.tak.chat_ws.redis.RedisPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;

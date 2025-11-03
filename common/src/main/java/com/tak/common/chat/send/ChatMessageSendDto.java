@@ -1,4 +1,4 @@
-package com.tak.common.commonDto.send;
+package com.tak.common.chat.send;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

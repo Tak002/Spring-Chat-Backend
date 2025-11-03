@@ -1,6 +1,6 @@
-package com.tak.common.commonDto.receive;
+package com.tak.common.chat.receive;
 
-import com.tak.common.commonDto.pubsub.ChatTimestampPubSubDto;
+import com.tak.common.chat.pubsub.ChatTimestampPubSubDto;
 import lombok.Builder;
 import lombok.Data;
 
