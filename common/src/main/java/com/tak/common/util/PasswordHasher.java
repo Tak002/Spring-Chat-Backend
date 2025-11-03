@@ -1,4 +1,4 @@
-package com.tak.app_auth.util;
+package com.tak.common.util;
 
 public class PasswordHasher {
     //todo 해시 알고리즘 사용
