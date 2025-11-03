@@ -1,8 +1,11 @@
 package com.tak.common.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
+
 import java.util.Map;
 
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class ApiError {
     private final String code;              // 예: "AUTH.CODE_INVALID", "MEETING.FULL"
@@ -15,7 +18,4 @@ public final class ApiError {
         this.details = details;
     }
 
-    public String getCode() { return code; }
-    public String getMessage() { return message; }
-    public Map<String, Object> getDetails() { return details; }
 }

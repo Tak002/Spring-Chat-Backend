@@ -1,6 +1,6 @@
 package com.tak.app_auth.appUser;
 
-import com.tak.app_auth.dto.CreateAppUserRequest;
+import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.refreshToken.RefreshToken;
 import com.tak.app_auth.refreshToken.RefreshTokenService;
@@ -20,17 +20,17 @@ public class AppUserService {
     private final AppUserRepository appUserRepository;
     private final RefreshTokenService refreshtokenService;
     //todo 이메일, 비밀번호 유효성 검사
-    public AppUser createAppUser(CreateAppUserRequest request) {
-        if(appUserRepository.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + request.getEmail());
+    public AppUser createAppUser(SignupRequest request) {
+        if(appUserRepository.existsByEmail(request.email())){
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + request.email());
         }
-        if(request.getPasswordRow() == null || request.getPasswordRow().isEmpty()){
+        if(request.passwordRow() == null || request.passwordRow().isEmpty()){
             throw new IllegalArgumentException("비밀번호는 비어있을 수 없습니다." );
         }
         AppUser appUser = AppUser.builder()
-            .email(request.getEmail())
-            .passwordHash(PasswordHasher.hash(request.getPasswordRow()))
-            .role(request.getRole() != null ? request.getRole() : AppUser.Role.user)
+            .email(request.email())
+            .passwordHash(PasswordHasher.hash(request.passwordRow()))
+            .role(request.role() != null ? request.role() : AppUser.Role.user)
             .build();
         return appUserRepository.save(appUser);
 
@@ -38,10 +38,10 @@ public class AppUserService {
 
     public Map<String,String> login(LoginRequest request) {
         // Email 검증
-        AppUser appUser = appUserRepository.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + request.getEmail()));
+        AppUser appUser = appUserRepository.findByEmail(request.email()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + request.email()));
 
         // Password 검증
-        if(!appUser.getPasswordHash().equals(PasswordHasher.hash(request.getPasswordRow()))){
+        if(!appUser.getPasswordHash().equals(PasswordHasher.hash(request.passwordRow()))){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
         return generateTokens(appUser);

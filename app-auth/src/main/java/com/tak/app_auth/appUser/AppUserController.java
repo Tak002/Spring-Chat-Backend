@@ -1,6 +1,6 @@
 package com.tak.app_auth.appUser;
 
-import com.tak.app_auth.dto.CreateAppUserRequest;
+import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.dto.TokenDto;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class AppUserController {
     }
     @PostMapping("/signup")
     @ResponseBody
-    public String createAppUser(@RequestBody CreateAppUserRequest request) {
+    public String createAppUser(@RequestBody SignupRequest request) {
         try{
             return appUserService.createAppUser(request).toString();
         }catch (Exception e){
@@ -66,7 +66,7 @@ public class AppUserController {
     @ResponseBody
     public String loginTest(@RequestBody TokenDto token) {
         try{
-            return appUserService.loginTest(token.getToken());
+            return appUserService.loginTest(token.token());
         }catch (Exception e){
             return e.getMessage();
         }
