@@ -47,7 +47,7 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<?> listEvents() {
-        // todo 이벤트 생성 로직 구현
+        // todo 이벤트 목록 조회 로직 구현
         return ResponseEntity.ok().body(ApiResponseBody.ok(List.of(sampleEvent,sampleEvent,sampleEvent)));
     }
 }
