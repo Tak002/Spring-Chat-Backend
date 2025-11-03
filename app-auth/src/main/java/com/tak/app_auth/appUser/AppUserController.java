@@ -5,6 +5,7 @@ import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.dto.TokenDto;
 import com.tak.common.api.ApiResponseBody;
+import com.tak.common.appUser.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class AppUserController {
     public ResponseEntity<?> createAppUser(@RequestBody SignupRequest request) {
         try{
             AppUser appuser  = appUserService.createAppUser(request);
-            return ResponseEntity.ok().body(appuser);
+            return ResponseEntity.ok().body(ApiResponseBody.ok(Map.of("appUser",appuser)));
         }catch (Exception e){
             return ResponseEntity.badRequest().body(ApiResponseBody.fail("Signup Failed",e.getMessage()));
         }

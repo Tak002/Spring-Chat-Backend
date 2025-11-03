@@ -1,6 +1,6 @@
 package com.tak.app_auth.dto;
 
-import com.tak.app_auth.appUser.AppUser;
+import com.tak.common.appUser.AppUser;
 
 public record LoginResponse(
         String accessToken,

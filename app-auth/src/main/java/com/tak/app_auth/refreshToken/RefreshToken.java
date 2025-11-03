@@ -1,6 +1,6 @@
 package com.tak.app_auth.refreshToken;
 
-import com.tak.app_auth.appUser.AppUser;
+import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

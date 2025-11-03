@@ -6,6 +6,7 @@ import com.tak.app_auth.refreshToken.RefreshToken;
 import com.tak.app_auth.refreshToken.RefreshTokenService;
 import com.tak.app_auth.util.PasswordHasher;
 import com.tak.app_auth.util.TokenUtil;
+import com.tak.common.appUser.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ public class AppUserService {
     private final RefreshTokenService refreshtokenService;
     //todo 이메일, 비밀번호 유효성 검사
     public AppUser createAppUser(SignupRequest request) {
+        //todo certificationNumber 검증
+
         if(appUserRepository.existsByEmail(request.email())){
             throw new IllegalArgumentException("이미 존재하는 이메일입니다: " + request.email());
         }
@@ -32,6 +35,9 @@ public class AppUserService {
             .passwordHash(PasswordHasher.hash(request.passwordRow()))
             .role(request.role() != null ? request.role() : AppUser.Role.user)
             .nickname(request.nickname())
+            .department(request.department())
+            .bio(request.bio())
+            .birthDate(request.birthDate())
             .build();
         return appUserRepository.save(appUser);
 
