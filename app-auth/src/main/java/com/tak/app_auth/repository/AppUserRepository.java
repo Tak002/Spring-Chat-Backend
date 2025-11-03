@@ -1,4 +1,4 @@
-package com.tak.app_auth.appUser;
+package com.tak.app_auth.repository;
 
 
 import com.tak.common.appUser.AppUser;

@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth/email/")
-public class EmailController {
+public class EmailAuthController {
     @PostMapping("/verify")
     public ResponseEntity<?> verifyEmail(@RequestBody String email) {
         //todo 이메일 인증 구현

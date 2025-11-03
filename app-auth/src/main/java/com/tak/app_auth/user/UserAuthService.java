@@ -1,9 +1,10 @@
-package com.tak.app_auth.appUser;
+package com.tak.app_auth.user;
 
 import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.refreshToken.RefreshToken;
 import com.tak.app_auth.refreshToken.RefreshTokenService;
+import com.tak.app_auth.repository.AppUserRepository;
 import com.tak.app_auth.util.PasswordHasher;
 import com.tak.app_auth.util.TokenUtil;
 import com.tak.common.appUser.AppUser;
@@ -17,7 +18,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AppUserService {
+public class UserAuthService {
     private final AppUserRepository appUserRepository;
     private final RefreshTokenService refreshtokenService;
     //todo 이메일, 비밀번호 유효성 검사
