@@ -1,6 +1,6 @@
 package com.tak.app_service.user;
 
-import com.tak.app_service.dto.CurrentUserDto;
+import com.tak.app_service.dto.user.CurrentUserDto;
 import com.tak.common.api.ApiResponseBody;
 import com.tak.common.appUser.AppUser;
 import org.springframework.http.ResponseEntity;

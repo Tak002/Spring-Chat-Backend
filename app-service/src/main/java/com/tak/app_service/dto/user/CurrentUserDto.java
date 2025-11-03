@@ -1,4 +1,4 @@
-package com.tak.app_service.dto;
+package com.tak.app_service.dto.user;
 
 import com.tak.common.appUser.AppUser;
 
