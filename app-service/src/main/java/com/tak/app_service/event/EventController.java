@@ -41,7 +41,7 @@ public class EventController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getEvent(@PathVariable String id) {
-        // todo 이벤트 생성 로직 구현
+        // todo 이벤트 조회 로직 구현
         return ResponseEntity.ok().body(ApiResponseBody.ok());
     }
 
