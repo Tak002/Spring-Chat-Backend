@@ -30,5 +30,6 @@ public class UserInfoController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserProfile(@PathVariable String id) {
         return ResponseEntity.ok().body(ApiResponseBody.ok(new CurrentUserDto("dummy-access",
-                new CurrentUserDto.AuthUser(id, "1234", "nickname", AppUser.Role.user, AppUser.Status.active, "CS", "Hello, I'm using TAK!", LocalDate.of(2002,11,20)))));    }
+                new CurrentUserDto.AuthUser(id, "1234", "nickname", AppUser.Role.user, AppUser.Status.active, "CS", "Hello, I'm using TAK!", LocalDate.of(2002,11,20)))));
+    }
 }
