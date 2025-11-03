@@ -1,8 +1,8 @@
-package com.tak.app_auth.dto;
+package com.tak.app_service.dto;
 
 import com.tak.common.appUser.AppUser;
 
-public record LoginResponse(
+public record CurrentUserDto(
         String accessToken,
         AuthUser user
 ) {
