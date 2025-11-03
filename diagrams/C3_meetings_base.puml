@@ -1,0 +1,35 @@
+@startuml C3_meetings_base
+title C3. 미팅 생성/상세/검색
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(Meeting)" as PG
+
+== 생성 ==
+User -> SVC: POST /api/meetings\n{title, description, date, time, place, maxMembers, rules, tags[], joinFormId?, thumbnailId?}
+SVC -> SVC: 토큰/바디 검증
+SVC -> PG: INSERT meeting (...)
+SVC --> User: 201 CREATED {success:true, data:{id:"m_123"}}
+
+== 상세 ==
+User -> SVC: GET /api/meetings/{id}
+SVC -> PG: SELECT meeting + host + members + stats
+alt 비공개/권한 없음
+  SVC --> User: 403 FORBIDDEN
+  return
+end
+alt 미존재
+  SVC --> User: 404 NOT_FOUND
+  return
+end
+SVC --> User: 200 OK {success:true, data:{...}}
+
+== 검색 ==
+User -> SVC: GET /api/meetings?keyword=...&tag=...&dateFrom=...&sort=latest&page=1&size=20
+SVC -> PG: SELECT ... WHERE filters... ORDER BY ... LIMIT/OFFSET
+alt 결과 없음
+  SVC --> User: 200 OK {success:true, data:[]}
+else 결과 있음
+  SVC --> User: 200 OK {success:true, data:[{id:"m_123", title:"..."}]}
+end
+@enduml

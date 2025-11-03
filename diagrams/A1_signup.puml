@@ -1,0 +1,41 @@
+@startuml A1_signup
+title A1. 회원가입(+이메일 인증) — NGINX 제외
+
+actor User
+participant "app-auth" as AUTH
+database "PostgreSQL\n(User DB)" as PG
+participant "SMTP\n(Email Service)" as SMTP
+
+== 1) Signup: 도메인 체크 + PENDING 생성 + 인증코드 발송 ==
+User -> AUTH: POST /auth/signup\n{ email, password, nickname, ... }
+AUTH -> PG: SELECT email/nickname 중복 확인
+alt 중복(이메일/닉네임)
+  AUTH --> User: 409 Conflict\n{ code:"DUPLICATE", message:"이미 사용 중" }
+  return
+end
+
+AUTH -> AUTH: 학교 이메일 도메인 유효성 검사
+alt 도메인 불허
+  AUTH --> User: 400 Bad Request\n{ code:"DOMAIN_INVALID" }
+  return
+end
+
+AUTH -> PG: INSERT user(status=PENDING, email_verified=false)\n+ password hash 저장
+AUTH -> SMTP: Send Verification Code(email)\n(코드 TTL = 무제한)
+alt 메일 발송 실패
+  AUTH --> User: 502 Bad Gateway\n{ code:"EMAIL_SEND_FAILED" }
+  return
+end
+AUTH --> User: 202 Accepted\n{ verificationRequired:true }
+
+== 2) Verify: 코드 검증 후 활성화 ==
+User -> AUTH: POST /auth/email/verify\n{ email, code }
+AUTH -> PG: SELECT verification_code by email
+alt 코드 불일치/존재X
+  AUTH --> User: 400 Bad Request\n{ code:"CODE_INVALID" }
+  return
+end
+
+AUTH -> PG: UPDATE user\nSET email_verified=true, status=ACTIVE
+AUTH --> User: 200 OK { status:"success" }
+@enduml

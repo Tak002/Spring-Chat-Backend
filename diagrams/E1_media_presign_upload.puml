@@ -1,0 +1,28 @@
+@startuml E1_media_presign_upload
+title E1. 업로드용 Presigned URL 발급
+
+actor User
+participant "app-media" as MEDIA
+participant "Object Storage\n(S3 등)" as S3
+
+== Presign 요청 ==
+User -> MEDIA: POST /media/presign/upload\n{ contentType, purpose }
+MEDIA -> MEDIA: 파라미터 검증(contentType, purpose)
+
+alt 유효성 실패
+  MEDIA --> User: 400 BAD_REQUEST {success:false, code:"VALIDATION_ERROR"}
+  return
+end
+
+== URL 생성 ==
+MEDIA -> S3: Generate Presigned PUT URL (contentType, ACL 등)
+alt 스토리지 오류
+  MEDIA --> User: 502 BAD_GATEWAY {code:"STORAGE_ERROR"}
+  return
+end
+
+MEDIA --> User: 200 OK\n{ uploadUrl, key, headers:{...} }
+note right
+클라이언트는 곧바로 S3에 PUT 업로드한다.\n(서버는 파일 바디를 수신하지 않음)
+end note
+@enduml

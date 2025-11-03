@@ -11,7 +11,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
@@ -81,7 +80,7 @@ public class AppUserService {
         String refreshTokenRow = refreshtokenService.issueRefreshToken(appUser);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshTokenRow)
                 .httpOnly(true)
-                .secure(true)
+//                .secure(true)
                 .path("/")
                 .sameSite("Strict")
                 .maxAge(Duration.ofDays(14))

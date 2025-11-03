@@ -1,0 +1,23 @@
+@startuml A3_account_delete
+title A3. 회원 탈퇴(soft-delete/비활성) — NGINX 제외
+
+actor User
+participant "app-auth" as AUTH
+database "PostgreSQL\n(User DB)" as PG
+
+== 탈퇴 요청 ==
+User -> AUTH: DELETE /auth/account\n(Authorization: Bearer accessToken)
+AUTH -> AUTH: 액세스 토큰 검증(소유/만료)
+alt 인증 실패
+  AUTH --> User: 401 Unauthorized
+  return
+end
+
+AUTH -> PG: UPDATE user\nSET status=DEACTIVATED, deleted_at=now(), email_verified=false
+AUTH -> AUTH: 관련 토큰 무효화(이후 요청 차단)
+AUTH --> User: 204 No Content
+
+note over User
+클라이언트는 로컬 저장 토큰/세션 제거\n(강제 로그아웃 UX)
+end note
+@enduml

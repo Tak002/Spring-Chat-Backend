@@ -1,0 +1,24 @@
+@startuml B2_patch_me
+title B2. 내 프로필/설정 수정 (PATCH /api/users/me)
+
+actor User
+participant "app-service" as SVC
+database "PostgreSQL\n(User DB)" as PG
+participant "Media(meta)" as MEDIA #99CCFF
+
+== 요청 ==
+User -> SVC: PATCH /api/users/me\n{ name?, bio?, visibility?, profileImageId? }
+
+== 검증 ==
+SVC -> SVC: 토큰 검증
+alt 인증 실패
+  SVC --> User: 401 UNAUTHORIZED
+  return
+end
+
+
+
+== 갱신 ==
+SVC -> PG: UPDATE users SET ... WHERE id = :subjectId
+SVC --> User: 200 OK\n{success:true}
+@enduml

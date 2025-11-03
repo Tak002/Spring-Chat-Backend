@@ -1,0 +1,27 @@
+@startuml E2_media_upload_and_get
+title E2. 직접 업로드 & 접근(프록시/리다이렉트)
+
+actor User
+participant "Object Storage\n(S3 등)" as S3
+participant "app-media" as MEDIA
+
+== 직접 업로드 ==
+User -> S3: PUT {uploadUrl}\nHeaders: (presigned headers)
+alt 업로드 실패(용량/네트워크 등)
+  S3 --> User: 4xx/5xx (실패 사유)\n→ 재시도 UX
+  return
+else 업로드 성공
+  S3 --> User: 200 OK
+end
+
+== 접근(보기/다운로드) ==
+User -> MEDIA: GET /media/{id}
+alt 프록시/스트리밍
+  MEDIA -> S3: GET object {id}
+  S3 --> MEDIA: 200 (바이너리)
+  MEDIA --> User: 200 (바이너리)
+else 서명 URL 리다이렉트
+  MEDIA -> MEDIA: Signed GET URL 생성
+  MEDIA --> User: 302 Found\nLocation: https://s3.../{id}
+end
+@enduml

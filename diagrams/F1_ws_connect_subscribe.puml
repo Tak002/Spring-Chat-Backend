@@ -1,0 +1,26 @@
+@startuml F1_ws_connect_subscribe
+title F1. STOMP WebSocket 연결 & 구독
+
+actor User
+participant "chat-ws\n(STOMP Broker App)" as WS
+
+== CONNECT ==
+User -> WS: WebSocket CONNECT to /ws (or /ws-sockjs)
+User -> WS: STOMP CONNECT\nheaders: Authorization: Bearer accessToken
+WS -> WS: accessToken 검증(서명/만료/블랙리스트)
+alt 인증 실패
+  WS --> User: STOMP ERROR {code:"UNAUTHORIZED"}\nthen close
+  return
+else 인증 성공
+  WS --> User: STOMP CONNECTED {heart-beat: server 0, client 0}
+end
+
+== SUBSCRIBE ==
+User -> WS: SUBSCRIBE\nid:sub-1\ndestination:/topic/rooms.{roomId}\nack:auto
+WS -> WS: 권한/멤버십 검사(해당 room 참여자 여부)
+alt 권한 없음
+  WS --> User: ERROR {code:"FORBIDDEN"}\n(unsubscribe/close)
+else 구독 성공
+  WS --> User: 메시지 수신 대기 상태(heartbeat 유지)
+end
+@enduml
