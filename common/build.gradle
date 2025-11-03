@@ -3,7 +3,8 @@ plugins {
 }
 
 dependencies {
-
+	compileOnly 'jakarta.persistence:jakarta.persistence-api'
+	compileOnly 'org.hibernate.orm:hibernate-core'
 }
 
 tasks.named('jar') { enabled = true }

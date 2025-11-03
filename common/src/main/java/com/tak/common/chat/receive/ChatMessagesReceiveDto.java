@@ -1,4 +1,4 @@
-package com.tak.chat_common.commonDto.receive;
+package com.tak.common.chat.receive;
 
 import lombok.Data;
 

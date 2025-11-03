@@ -1,6 +1,7 @@
-package com.tak.app_auth.appUser;
+package com.tak.app_auth.repository;
 
 
+import com.tak.common.appUser.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,6 +1,6 @@
-package com.tak.chat_common.commonDto.pubsub;
+package com.tak.common.chat.pubsub;
 
-import com.tak.chat_common.commonDto.send.ChatMessageSendDto;
+import com.tak.common.chat.send.ChatMessageSendDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

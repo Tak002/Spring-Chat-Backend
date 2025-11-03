@@ -1,4 +1,4 @@
-package com.tak.app_auth.util;
+package com.tak.common.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

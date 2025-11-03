@@ -63,6 +63,10 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ docker compose up 실패."
     return
 }
+# 6. reverse-proxy만 간단 재시작
+Write-Host "==> reverse-proxy 재시작"
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml restart reverse-proxy
+if ($LASTEXITCODE -ne 0) { Write-Host "❌ reverse-proxy 재시작 실패."; return }
 
 Write-Host ""
 Write-Host "✅ 완료: $moduleName 리빌드 & 재시작 끝."

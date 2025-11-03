@@ -1,4 +1,4 @@
-package com.tak.app_auth.appUser;
+package com.tak.common.appUser;
 
 import jakarta.persistence.Entity;
 
@@ -8,6 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -17,6 +18,7 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class AppUser {
 
     @Id
@@ -40,6 +42,9 @@ public class AppUser {
     @Builder.Default
     private Role role = Role.user;
 
+    @Column(name = "nickname", nullable = false)
+    private String nickname;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -50,6 +55,15 @@ public class AppUser {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    @Column(name = "department")
+    private String department;
+
+    @Column(name = "bio", length = 50)
+    private String bio; // 자기소개 (최대 50자)
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate; // 생년월일
 
     // --- Enum 정의 ---
     public enum Status {

@@ -1,14 +1,22 @@
 package com.tak.app_auth.dto;
 
-import lombok.*;
+import com.tak.common.appUser.AppUser;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@ToString
-public class LoginResponse {
-    String accessToken;
-    String refreshToken;
+public record LoginResponse(
+        String accessToken,
+        AuthUser user
+) {
+    public record AuthUser(
+            String id, String email, String nickname, AppUser.Role role, AppUser.Status status // ACTIVE/DEACTIVATED/...
+    ) {
+        public static AuthUser fromAppUser(AppUser appUser) {
+            return new AuthUser(
+                    appUser.getId().toString(),
+                    appUser.getEmail(),
+                    appUser.getNickname(),
+                    appUser.getRole(),
+                    appUser.getStatus()
+            );
+        }
+    }
 }

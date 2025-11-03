@@ -23,7 +23,7 @@ subprojects {
     }
     dependencyManagement { //버전 없이 dependencies 사용 가능
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.4"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.7"
         }
     }
     dependencies {

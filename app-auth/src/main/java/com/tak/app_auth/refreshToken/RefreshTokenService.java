@@ -1,7 +1,7 @@
 package com.tak.app_auth.refreshToken;
 
-import com.tak.app_auth.appUser.AppUser;
-import com.tak.app_auth.util.TokenUtil;
+import com.tak.common.appUser.AppUser;
+import com.tak.common.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
