@@ -1,7 +1,7 @@
 package com.tak.chat_ws.redis;
 
-import com.tak.chat_common.commonDto.pubsub.ChatMessagePubSubDto;
-import com.tak.chat_common.commonDto.send.ChatMessageSendDto;
+import com.tak.common.commonDto.pubsub.ChatMessagePubSubDto;
+import com.tak.common.commonDto.send.ChatMessageSendDto;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;

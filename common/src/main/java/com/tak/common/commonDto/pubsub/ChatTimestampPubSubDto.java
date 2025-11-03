@@ -1,4 +1,4 @@
-package com.tak.chat_common.commonDto.pubsub;
+package com.tak.common.commonDto.pubsub;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

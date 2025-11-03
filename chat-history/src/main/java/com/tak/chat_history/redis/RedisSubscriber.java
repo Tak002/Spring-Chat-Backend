@@ -1,8 +1,8 @@
 package com.tak.chat_history.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tak.chat_common.commonDto.pubsub.ChatMessagePubSubDto;
-import com.tak.chat_common.commonDto.pubsub.ChatTimestampPubSubDto;
+import com.tak.common.commonDto.pubsub.ChatMessagePubSubDto;
+import com.tak.common.commonDto.pubsub.ChatTimestampPubSubDto;
 import com.tak.chat_history.chatMessage.ChatMessage;
 import com.tak.chat_history.chatMessage.ChatMessageRepository;
 import lombok.RequiredArgsConstructor;
