@@ -1,8 +1,10 @@
 package com.tak.app_auth.appUser;
 
+import com.tak.app_auth.dto.LoginResponse;
 import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.dto.TokenDto;
+import com.tak.common.api.ApiResponseBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,42 +28,49 @@ public class AppUserController {
     public String signupPage() {
         return "signup";
     }
-    @PostMapping("/signup")
-    @ResponseBody
-    public String createAppUser(@RequestBody SignupRequest request) {
-        try{
-            return appUserService.createAppUser(request).toString();
-        }catch (Exception e){
-            return e.getMessage();
-        }
-    }
+
     @GetMapping("/login")
     public String loginPage() {
         return "login";
     }
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        try{
-            // 로그인 성공 시, 토큰 2개 발급 (Access + Refresh)
-            Map<String, String> tokens = appUserService.login(request);
 
-            // Access Token은 클라이언트가 직접 저장
-            // Refresh Token은 HttpOnly 쿠키로 내려주는 것도 가능(웹의 경우)
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, tokens.get("refreshCookie"))
-                    .body(Map.of("accessToken", tokens.get("accessToken")));
-
-        }catch (Exception e){
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
 
     @GetMapping("/login-test")
     public String loginTestPage() {
         return "login-test";
     }
+
+    @PostMapping("/signup")
+    @ResponseBody
+    public ResponseEntity<?> createAppUser(@RequestBody SignupRequest request) {
+        try{
+            AppUser appuser  = appUserService.createAppUser(request);
+            return ResponseEntity.ok().body(appuser);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(ApiResponseBody.fail("Signup Failed",e.getMessage()));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try{
+            // 로그인 성공 시, 토큰 2개 발급 (Access + Refresh)
+            Map<String, Object> tokens = appUserService.login(request);
+            // Refresh Token은 HttpOnly 쿠키로 내려주는 것도 가능(웹의 경우)
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, (String) tokens.get("refreshCookie"))
+                    .body(ApiResponseBody.ok(new LoginResponse(
+                            (String) tokens.get("accessToken"),
+                            LoginResponse.AuthUser.fromAppUser((AppUser) tokens.get("appUser"))
+                    )));
+
+        }catch (Exception e){
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseBody.fail("Login Failed",e.getMessage()));
+        }
+    }
+
     @PostMapping("/login-test")
     @ResponseBody
     public String loginTest(@RequestBody TokenDto token) {
@@ -83,9 +92,9 @@ public class AppUserController {
     @PostMapping("/rotate-refresh-token")
     public ResponseEntity<?> rotateRefreshToken(@CookieValue String refreshToken) {
         try {
-            Map<String, String> tokens = appUserService.rotateRefreshToken(refreshToken);
+            Map<String, Object> tokens = appUserService.rotateRefreshToken(refreshToken);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, tokens.get("refreshCookie"))
+                    .header(HttpHeaders.SET_COOKIE, (String) tokens.get("refreshCookie"))
                     .body(Map.of("accessToken", tokens.get("accessToken")));
         } catch (Exception e) {
             return ResponseEntity

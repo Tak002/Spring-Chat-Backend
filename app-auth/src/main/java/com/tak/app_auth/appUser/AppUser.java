@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class AppUser {
 
     @Id
@@ -39,6 +40,9 @@ public class AppUser {
     @Column(name = "role", nullable = false)
     @Builder.Default
     private Role role = Role.user;
+
+    @Column(name = "nickname", nullable = false)
+    private String nickname;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

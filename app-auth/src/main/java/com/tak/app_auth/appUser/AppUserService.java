@@ -31,12 +31,13 @@ public class AppUserService {
             .email(request.email())
             .passwordHash(PasswordHasher.hash(request.passwordRow()))
             .role(request.role() != null ? request.role() : AppUser.Role.user)
+            .nickname(request.nickname())
             .build();
         return appUserRepository.save(appUser);
 
     }
 
-    public Map<String,String> login(LoginRequest request) {
+    public Map<String,Object> login(LoginRequest request) {
         // Email 검증
         AppUser appUser = appUserRepository.findByEmail(request.email()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + request.email()));
 
@@ -69,13 +70,13 @@ public class AppUserService {
         return refreshCookie.toString();
     }
 
-    public Map<String,String> rotateRefreshToken(String oldRefreshToken) {
+    public Map<String,Object> rotateRefreshToken(String oldRefreshToken) {
         AppUser appUser = refreshtokenService.validateAndGetUser(oldRefreshToken)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다."));
         return generateTokens(appUser);
     }
 
-    private Map<String, String> generateTokens(AppUser appUser) {
+    private Map<String, Object> generateTokens(AppUser appUser) {
         String accessToken= TokenUtil.generateAccessToken(String.valueOf(appUser.getId()));
         String refreshTokenRow = refreshtokenService.issueRefreshToken(appUser);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshTokenRow)
@@ -86,7 +87,7 @@ public class AppUserService {
                 .maxAge(Duration.ofDays(14))
                 .build();
 
-        return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString());
+        return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString(),"appUser", appUser);
     }
 
     // return String of Access token validity, id, expiration + refreshToken validity, refreshToken.id, user.id, user.email, expiration
