@@ -58,7 +58,7 @@ public class UserAuthService {
 
 
     public String loginTest(String token) {
-        if(TokenUtil.validateAccessToken(token)){
+        if(TokenUtil.validateAccessTokenAndGetID(token)!=null){
             return TokenUtil.getUserIdFromAccessToken(token);
         }
         else{
@@ -102,7 +102,7 @@ public class UserAuthService {
         String accessTokenUserId;
 
         String accessTokenExpiration;
-        String accessTokenValidity = TokenUtil.validateAccessToken(accessToken)? "Valid" : "Invalid";
+        String accessTokenValidity = TokenUtil.validateAccessTokenAndGetID(accessToken)!=null? "Valid" : "Invalid";
         if(accessTokenValidity.equals("Valid")){
             accessTokenUserId = TokenUtil.getUserIdFromAccessToken(accessToken);
             accessTokenExpiration = String.valueOf(TokenUtil.getExpirationDateFromAccessToken(accessToken));
