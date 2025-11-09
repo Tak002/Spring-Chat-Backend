@@ -5,6 +5,10 @@ plugins {
 dependencies {
 	compileOnly 'jakarta.persistence:jakarta.persistence-api'
 	compileOnly 'org.hibernate.orm:hibernate-core'
+	compileOnlyApi 'jakarta.servlet:jakarta.servlet-api'   // Servlet 6 (Tomcat 10.1+)
+	compileOnlyApi 'org.springframework:spring-web'        // OncePerRequestFilter, HttpMethod
+	compileOnlyApi 'org.springframework:spring-beans'
+
 }
 
 tasks.named('jar') { enabled = true }
