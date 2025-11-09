@@ -52,13 +52,16 @@ public class TokenUtil {
     }
 
     // 토큰 만료 여부/서명 여부 등 기본 유효성
-    public static boolean validateAccessToken(String token) {
+    public static String validateAccessTokenAndGetID(String token) {
         try {
             Claims claims = parseClaims(token);
             Date exp = claims.getExpiration();
-            return exp.after(new Date());
+            if(exp.after(new Date())){
+                return claims.getSubject();
+            }
+            return null;
         } catch (Exception e) {
-            return false;
+            return null;
         }
     }
     // refresh 토큰 원본으로 쓸 랜덤 문자열 생성
