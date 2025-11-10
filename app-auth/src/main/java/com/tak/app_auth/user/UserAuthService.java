@@ -58,10 +58,10 @@ public class UserAuthService {
 
 
     public String loginTest(String token) {
-        if(TokenUtil.validateAccessTokenAndGetID(token)!=null){
-            return TokenUtil.getUserIdFromAccessToken(token);
-        }
-        else{
+        String id = TokenUtil.validateAccessTokenAndGetID(token);
+        if (id != null) {
+            return id;
+        } else {
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
         }
     }
