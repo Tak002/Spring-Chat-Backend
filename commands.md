@@ -12,10 +12,11 @@
 ./gradlew bootJar --no-daemon -x test
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml restart reverse-proxy
 ```
 
 ```bash 
-./gradlew bootJar --no-daemon -x test;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps
+./gradlew bootJar --no-daemon -x test;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml build --parallel;` docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps;`docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml restart reverse-proxy
 ```
 
 * 설명: 로컬에서 JAR 생성 후, 두 앱 이미지만 재빌드·무중단 재기동.
@@ -49,6 +50,17 @@ docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml 
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml down -v
 docker image prune -f && docker container prune -f && docker system prune -f
 ```
+# 1) 앱 빌드
+./gradlew bootJar --no-daemon -x test
+
+# 2) Postgres만 먼저 기동 (healthcheck로 준비될 때까지 대기)
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d postgres
+
+# 3) 마이그레이션 1회 실행 후 컨테이너 제거
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml run --rm db-migrate
+
+# 4) 나머지 서비스 기동
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d --no-deps
 
 * 설명: 컨테이너/네트워크/이미지/볼륨 정리(※ `-v`는 데이터 초기화 주의).
 

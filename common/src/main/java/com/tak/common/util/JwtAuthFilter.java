@@ -23,7 +23,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
         String token = resolveBearerToken(header);
-
+        log.info("request.uri: {}", request.getRequestURI());
+        log.info("token: {}", token);
 
         // 1) 프리플라이트는 패스
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
@@ -50,6 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         //토큰이 유효한 경우, request에 userId 속성 추가
         request.setAttribute("userId", id);
+        log.info("userId from token: {}", id);
         filterChain.doFilter(request,response);
     }
 
