@@ -103,12 +103,4 @@ public class UserAuthController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-    
-//    토큰 동작 테스트용 엔드포인트
-    @GetMapping("/token-test")
-    public ResponseEntity<Map<String, String>> tokenTest(@RequestHeader String accessToken, @CookieValue String refresh_token) {
-        Map<String, String> tokenData = userAuthService.tokenTest(accessToken, refresh_token);
-        return ResponseEntity.ok(tokenData);
-
-    }
 }

@@ -58,10 +58,10 @@ public class UserAuthService {
 
 
     public String loginTest(String token) {
-        if(TokenUtil.validateAccessToken(token)){
-            return TokenUtil.getUserIdFromAccessToken(token);
-        }
-        else{
+        String id = TokenUtil.validateAccessTokenAndGetID(token);
+        if (id != null) {
+            return id;
+        } else {
             throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
         }
     }
@@ -96,45 +96,5 @@ public class UserAuthService {
 
         return Map.of("accessToken", accessToken, "refreshCookie", refreshCookie.toString(),"appUser", appUser);
     }
-
-    // return String of Access token validity, id, expiration + refreshToken validity, refreshToken.id, user.id, user.email, expiration
-    public Map<String,String> tokenTest(String accessToken, String rowRefreshToken) {
-        String accessTokenUserId;
-
-        String accessTokenExpiration;
-        String accessTokenValidity = TokenUtil.validateAccessToken(accessToken)? "Valid" : "Invalid";
-        if(accessTokenValidity.equals("Valid")){
-            accessTokenUserId = TokenUtil.getUserIdFromAccessToken(accessToken);
-            accessTokenExpiration = String.valueOf(TokenUtil.getExpirationDateFromAccessToken(accessToken));
-        }else {
-            accessTokenUserId = null;
-            accessTokenExpiration = null;
-        }
-
-        String refreshTokenValidity;
-        String refreshTokenUserId;
-        String refreshTokenExpiration;
-        Optional<RefreshToken> refreshToken = refreshtokenService.validateAndGetRefreshToken(rowRefreshToken);
-        if (refreshToken.isPresent()) {
-            refreshTokenValidity = "valid";
-            refreshTokenUserId = String.valueOf(refreshToken.get().getUser().getId());
-            refreshTokenExpiration = String.valueOf(refreshToken.get().getExpiresAt());
-        } else {
-            refreshTokenValidity = "invalid";
-            refreshTokenUserId = null;
-            refreshTokenExpiration = null;
-        }
-
-        return Map.of(
-                "accessTokenValidity", accessTokenValidity,
-                "accessTokenUserId", accessTokenUserId,
-                "accessTokenExpiration", accessTokenExpiration,
-                "refreshTokenValidity", refreshTokenValidity,
-                "refreshTokenUserId", refreshTokenUserId,
-                "refreshTokenExpiration", refreshTokenExpiration
-        );
-
-
-
-    }
 }
+

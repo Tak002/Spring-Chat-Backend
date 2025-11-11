@@ -15,6 +15,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  db-migrate:
+    image: flyway/flyway:10-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/localDB
+      FLYWAY_USER: localUser
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      FLYWAY_SCHEMAS: public
+    volumes:
+      - ../db/migration:/flyway/sql:ro
+    command: ["-connectRetries=60", "migrate"]
+
+    restart: "no"
+
   redis:
     image: redis:7-alpine
     command: ["redis-server","--requirepass","${REDIS_PASSWORD:-}"]
