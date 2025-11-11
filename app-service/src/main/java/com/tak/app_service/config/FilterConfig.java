@@ -26,7 +26,7 @@ public class FilterConfig {
 
         FilterRegistrationBean<OncePerRequestFilter> reg = new FilterRegistrationBean<>();
         reg.setFilter(jwtAuthFilter);
-        reg.addUrlPatterns("/*");           // 적용 범위
+        reg.addUrlPatterns("/*");           // 적용 범위 (모든 경로에 필터 적용)
         reg.setName("jwtAuthFilter");
         return reg;
     }

@@ -3,6 +3,7 @@ package com.tak.common.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +14,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
 
+@Slf4j
 public class TokenUtil {
     public static final long REFRESH_TOKEN_VALIDITY_Days = 1; // 1일
     private static final long ACCESS_TOKEN_EXPIRATION_MS = 10 * 60 * 1000; //10분
@@ -43,14 +45,6 @@ public class TokenUtil {
                 .getPayload();
     }
 
-    // 토큰 안에 넣어둔 subject (여기서는 userId) 꺼내기
-    public static String getUserIdFromAccessToken(String token) {
-        return parseClaims(token).getSubject();
-    }
-    public static Date getExpirationDateFromAccessToken(String token) {
-        return parseClaims(token).getExpiration();
-    }
-
     // 토큰 만료 여부/서명 여부 등 기본 유효성
     public static String validateAccessTokenAndGetID(String token) {
         try {
@@ -61,6 +55,7 @@ public class TokenUtil {
             }
             return null;
         } catch (Exception e) {
+            log.debug("Token validation failed: {}", e.getMessage());
             return null;
         }
     }
