@@ -29,7 +29,7 @@ public class RedisSubscriber implements MessageListener {
             ChatMessagePubSubDto chatMessage = objectMapper.readValue(body, ChatMessagePubSubDto.class);
 
             log.info("Received message: {}", chatMessage);
-            ChatMessage savedChat = chatMessageRepository.save(ChatMessage.of(chatMessage.getRoomId(), chatMessage.getSender(), chatMessage.getContent()));
+            ChatMessage savedChat = chatMessageRepository.save(ChatMessage.of(chatMessage.getRoomId(), chatMessage.getSenderId(), chatMessage.getContent()));
             redisPublisher.publish(ChatTimestampPubSubDto.of(savedChat.getId(),chatMessage.getTempId(), savedChat.getRoomId(), savedChat.getCreatedAt(),savedChat.getEditedAt()));
         } catch (Exception e) {
             log.error("Error processing Redis message", e);

@@ -11,7 +11,7 @@ import java.util.UUID;
 @Builder
 public class ChatMessageReceiveDto { // 서버에서 클라이언트로 전송되는 메시지 DTO
     private UUID id;
-    private String sender;
+    private Long senderId;
     private String content;
     private String roomId;
     private OffsetDateTime createdAt;
@@ -19,10 +19,10 @@ public class ChatMessageReceiveDto { // 서버에서 클라이언트로 전송�
     private boolean deleted;
 
     // 편의 팩토리
-    public static ChatMessageReceiveDto of(UUID id, String sender, String content, String roomId, OffsetDateTime createdAt, OffsetDateTime editedAt, boolean deleted) {
+    public static ChatMessageReceiveDto of(UUID id, Long senderId, String content, String roomId, OffsetDateTime createdAt, OffsetDateTime editedAt, boolean deleted) {
         return ChatMessageReceiveDto.builder()
                 .id(id)
-                .sender(sender)
+                .senderId(senderId)
                 .content(content)
                 .roomId(roomId)
                 .createdAt(createdAt)
@@ -35,7 +35,7 @@ public class ChatMessageReceiveDto { // 서버에서 클라이언트로 전송�
     public static ChatMessageReceiveDto from(ChatMessagePubSubDto chatMessagePubSubDto) {
         return ChatMessageReceiveDto.builder()
                 .id(chatMessagePubSubDto.getTempId()) // id는 tempId로 초기화, 나중에 chat-history에서 설정
-                .sender(chatMessagePubSubDto.getSender())
+                .senderId(chatMessagePubSubDto.getSenderId())
                 .content(chatMessagePubSubDto.getContent())
                 .roomId(chatMessagePubSubDto.getRoomId())
                 .createdAt(null) // createdAt는 나중에 chat-history에서 설정

@@ -252,13 +252,12 @@
         </div>
     </div>
 </div>
-
 <script>
     //
-    // 게이트웨이를 기준으로 동작하도록 수정
-    // - gateway origin (예: http://localhost) 기준으로
-    //   SockJS/STOMP 연결은 `${origin}/ws-sockjs`
-    //   채팅 히스토리는 `${origin}/history/<roomId>/messages`
+    // 게이트웨이를 기준으로 동작
+    // - gateway origin (예: http://localhost) 기준
+    //   SockJS/STOMP  : `${origin}/ws-sockjs`
+    //   히스토리 REST : `${origin}/history/<roomId>/messages`
     //
     const GATEWAY_ORIGIN = location.origin;
     const WS_ENDPOINT = GATEWAY_ORIGIN + "/ws-sockjs";   // SockJS/STOMP entry
@@ -288,11 +287,12 @@
         qs("messages").innerHTML = "";
         idToEl.clear();
     }
-    function shortId(id) { return (id ?? "null").slice(0, 8) + "…"; }
+    function shortId(id) { return (id ?? "null").toString().slice(0, 8) + "…"; }
     function fmtTime(s) {
         if (!s) return "null";
         const date = new Date(s);
-        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+        const pad = (n)=>String(n).padStart(2,"0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     }
 
     function renderHead(container, obj, { isTemp = false } = {}) {
@@ -306,9 +306,11 @@
         `;
     }
 
+    // ✅ sender → senderId(Long) 표시로 변경 (서버가 과거 필드 `sender`를 보낼 경우 안전한 폴백)
     function renderBody(container, obj) {
         const body = container.querySelector(".msg-body");
-        body.innerHTML = `<span class="sender">${obj.sender ?? "unknown"}</span><span class="content">${obj.content ?? ""}</span>`;
+        const displayId = (obj.senderId ?? obj.sender ?? "unknown");
+        body.innerHTML = `<span class="sender">${displayId}</span><span class="content">${obj.content ?? ""}</span>`;
     }
 
     function renderJson(container, obj) {
@@ -430,6 +432,7 @@
                 logDebug(`Raw frame: ${frame.body}`);
                 return;
             }
+            // 서버가 임시 전송 ack로 tempId → id 매핑을 내려줄 때 처리
             if (msg.tempId && (msg.createdAt || msg.editedAt)) {
                 const { tempId, id: realId, createdAt, editedAt } = msg;
                 if (idToEl.has(tempId)) {
@@ -449,10 +452,13 @@
         logDebug(`Subscribed to ${destination}`);
     }
 
+    // ✅ 전송 페이로드를 { senderId: Long, content, roomId }로 변경
     function sendMessage() {
-        const sender = qs("sender").value.trim();
+        const senderRaw = qs("sender").value.trim(); // 기존 입력칸(id="sender") 재활용
+        const senderIdNum = senderRaw === "" ? NaN : Number(senderRaw);
         const content = qs("content").value;
         const roomId = currentRoomId || qs("roomId").value.trim();
+
         if (!stompClient || !stompClient.connected) {
             showInfo("먼저 서버에 연결하고 방을 선택하세요.");
             return;
@@ -461,9 +467,17 @@
             showInfo("방 ID를 입력 후 [연결]을 눌러주세요.");
             return;
         }
-        stompClient.send(APP_SEND, {}, JSON.stringify({ sender, content, roomId }));
+        if (!Number.isFinite(senderIdNum)) {
+            showInfo("senderId(숫자)를 입력하세요.");
+            return;
+        }
+
+        // 주의: JS Number는 2^53-1까지 정밀. 그 범위를 넘는다면 문자열 전송을 고려.
+        const payload = { senderId: senderIdNum, content, roomId };
+        stompClient.send(APP_SEND, {}, JSON.stringify(payload));
+
         qs("content").value = "";
-        logDebug(`Sent: ${content}`);
+        logDebug(`Sent: ${JSON.stringify(payload)}`);
     }
 
     function disconnect() {
@@ -496,7 +510,7 @@
         if (e.key === "Enter") sendMessage();
     });
 
-    // 화면 오른쪽 정보 영역에 현재 endpoint들 표시
+    // 우측 정보 영역에 현재 endpoint들 표시
     const wsEndpointCode = document.getElementById("wsEndpointCode");
     const historyEndpointCode = document.getElementById("historyEndpointCode");
     if (wsEndpointCode) {
@@ -506,8 +520,9 @@
         historyEndpointCode.textContent = `${HISTORY_BASE}/{roomId}/messages`;
     }
 
-    // 자동으로 서버 연결 시도
+    // 자동 연결 시도
     ensureConnected();
 </script>
+
 </body>
 </html>

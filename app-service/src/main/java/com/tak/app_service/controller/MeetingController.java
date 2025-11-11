@@ -1,4 +1,4 @@
-package com.tak.app_service.meeting;
+package com.tak.app_service.controller;
 
 import com.tak.app_service.dto.meeting.MeetingCreateRequest;
 import com.tak.app_service.dto.meeting.MeetingDto;

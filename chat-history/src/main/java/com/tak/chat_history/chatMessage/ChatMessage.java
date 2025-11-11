@@ -3,6 +3,7 @@ package com.tak.chat_history.chatMessage;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -20,20 +21,21 @@ import java.util.UUID;
 public class ChatMessage {
 
     @Id
-    @GeneratedValue
+    @UuidGenerator // Hibernate가 UUID를 생성 (DB의 gen_random_uuid()와 호환)
+    @Column(columnDefinition = "UUID")
     private UUID id;
 
     @Column(name = "room_id", nullable = false)
-    private String roomId;
+    private String roomId; // REFERENCES chat_room(id)
 
-    @Column(name = "sender", nullable = false)
-    private String sender;
+    @Column(name = "sender_id") // REFERENCES app_user(id)
+    private Long senderId; // ON DELETE SET NULL과 정합을 맞추기 위해 nullable 허용
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false,insertable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
@@ -41,13 +43,13 @@ public class ChatMessage {
     private OffsetDateTime editedAt;
 
     @Column(name = "is_deleted", nullable = false)
-    private boolean deleted; // 컬럼명은 is_deleted 이지만, 자바 필드는 관례상 'deleted'
+    private boolean deleted;
 
     // 편의 팩토리
-    public static ChatMessage of(String roomId, String sender, String content) {
+    public static ChatMessage of(String roomId, Long senderId, String content) {
         return ChatMessage.builder()
                 .roomId(roomId)
-                .sender(sender)
+                .senderId(senderId)
                 .content(content)
                 .deleted(false)
                 .build();

@@ -1,4 +1,4 @@
-package com.tak.app_service.user;
+package com.tak.app_service.controller;
 
 import com.tak.app_service.dto.user.CurrentUserDto;
 import com.tak.common.api.ApiResponseBody;
