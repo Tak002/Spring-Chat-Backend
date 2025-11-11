@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reverse-proxy
+  labels:
+    io.kompose.service: reverse-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: reverse-proxy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.network/infra-default: "true"
+        io.kompose.service: reverse-proxy
+    spec:
+      containers:
+        - name: reverse-proxy
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+      restartPolicy: Always

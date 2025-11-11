@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml -o k8s-full/
+    kompose.version: 1.31.2 (a92241f79)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: app-auth
+  name: app-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app-auth
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml -o k8s-full/
+        kompose.version: 1.31.2 (a92241f79)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/infra-default: "true"
+        io.kompose.service: app-auth
+    spec:
+      containers:
+        - env:
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: secret
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/localDB
+            - name: SPRING_DATASOURCE_USERNAME
+              value: localUser
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+          image: tak002/app-auth:latest
+          name: app-auth
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+      restartPolicy: Always
+status: {}

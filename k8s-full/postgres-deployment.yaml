@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml -o k8s-full/
+    kompose.version: 1.31.2 (a92241f79)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: postgres
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml -o k8s-full/
+        kompose.version: 1.31.2 (a92241f79)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/infra-default: "true"
+        io.kompose.service: postgres
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: localDB
+            - name: POSTGRES_PASSWORD
+              value: secret
+            - name: POSTGRES_USER
+              value: localUser
+          image: postgres:16
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready -U localUser -d localDB
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          name: postgres
+          ports:
+            - containerPort: 5432
+              hostPort: 5432
+              protocol: TCP
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: pgdata
+      restartPolicy: Always
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: pgdata
+status: {}
