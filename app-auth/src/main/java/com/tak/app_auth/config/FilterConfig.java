@@ -12,7 +12,8 @@ import java.util.Set;
 public class FilterConfig {
     private static final Set<String> publicPrefixes =Set.of(
         "/auth/login",
-        "/auth/signup"
+        "/auth/signup",
+        "/auth/email/verify"
     );
 
     @Bean
