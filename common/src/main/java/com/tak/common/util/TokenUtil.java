@@ -17,7 +17,7 @@ import java.util.Date;
 @Slf4j
 public class TokenUtil {
     public static final long REFRESH_TOKEN_VALIDITY_Days = 1; // 1일
-    private static final long ACCESS_TOKEN_EXPIRATION_MS = 10 * 60 * 1000; //10분
+    private static final long ACCESS_TOKEN_EXPIRATION_MS =  5 * 60 * 60 * 1000; //5시간
 
     //todo 이 키는 반드시 외부에 노출되면 안됩니다. 환경변수나 안전한 저장소에서 관리하세요.
     private static final Key signingKey = Keys.hmacShaKeyFor(

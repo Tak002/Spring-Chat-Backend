@@ -15,13 +15,13 @@ import java.util.UUID;
 public class ChatMessagePubSubDto { //서버 간의 메시지 전달용
     @Builder.Default
     private UUID tempId = UUID.randomUUID();
-    private String sender;
+    private Long senderId;
     private String content;
     private String roomId;
 
     public static ChatMessagePubSubDto from(ChatMessageSendDto sendDto) {
         return ChatMessagePubSubDto.builder()
-                .sender(sendDto.getSender())
+                .senderId(sendDto.getSenderId())
                 .content(sendDto.getContent())
                 .roomId(sendDto.getRoomId())
                 .build();

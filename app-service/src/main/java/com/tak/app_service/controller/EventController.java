@@ -1,4 +1,4 @@
-package com.tak.app_service.event;
+package com.tak.app_service.controller;
 
 import com.tak.app_service.dto.event.EventCreateRequest;
 import com.tak.app_service.dto.event.EventDto;

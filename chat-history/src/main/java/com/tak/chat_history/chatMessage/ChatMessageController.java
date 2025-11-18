@@ -28,7 +28,7 @@ public class ChatMessageController {
                 .stream()
                 .map(chatMessage -> ChatMessageReceiveDto.of(
                         chatMessage.getId(),
-                        chatMessage.getSender(),
+                        chatMessage.getSenderId(),
                         chatMessage.getContent(),
                         chatMessage.getRoomId(),
                         chatMessage.getCreatedAt(),
