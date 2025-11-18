@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: app-ingress
 spec:
+  ingressClassName: nginx
   rules:
     - host: localhost
       http:
@@ -11,7 +12,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: app-auth-service
+                name: app-auth
                 port:
                   number: 8080
 
@@ -19,7 +20,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: app-service-service
+                name: app-service
                 port:
                   number: 8080
 
@@ -27,6 +28,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: app-media-service
+                name: app-media
                 port:
                   number: 8080
