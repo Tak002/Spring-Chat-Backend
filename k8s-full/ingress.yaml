@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: app-auth-service
+                port:
+                  number: 8080
+
+          - path: /service
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service-service
+                port:
+                  number: 8080
+
+          - path: /media
+            pathType: Prefix
+            backend:
+              service:
+                name: app-media-service
+                port:
+                  number: 8080
