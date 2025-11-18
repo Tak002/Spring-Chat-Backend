@@ -34,13 +34,6 @@ spec:
             - name: POSTGRES_USER
               value: localUser
           image: postgres:16
-          livenessProbe:
-            exec:
-              command:
-                - pg_isready -U localUser -d localDB
-            failureThreshold: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
           name: postgres
           ports:
             - containerPort: 5432
