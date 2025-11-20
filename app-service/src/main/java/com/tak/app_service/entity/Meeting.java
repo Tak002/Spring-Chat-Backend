@@ -1,13 +1,13 @@
 package com.tak.app_service.entity;
 
+import com.tak.app_service.dto.meeting.Rules;
 import com.tak.app_service.entity.enums.MeetingStatus;
 import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "meeting",
@@ -20,6 +20,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class Meeting {
 
     @Id
@@ -34,19 +35,20 @@ public class Meeting {
     @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false)
     private String description;
 
-    private LocalDate date;
+    @Column(nullable = false)
+    private LocalDateTime startAt;
 
-    private LocalTime time;
+    @Column(nullable = false)
+    private LocalDateTime endAt;
 
+    @Column(nullable = false)
     private String place;
 
     @Column(name = "max_members")
     private Integer maxMembers;
-
-    @Column(name = "rules_json")
-    private String rulesJson;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "thumbnail_id")
@@ -58,6 +60,7 @@ public class Meeting {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private MeetingStatus status = MeetingStatus.OPEN;
 
     @Column(name = "created_at", nullable = false)
@@ -65,6 +68,17 @@ public class Meeting {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender")
+    private Rules.Gender gender;
+
+    @Column(name="min_age")
+    private Integer minAge;
+
+    @Column(name="max_age")
+    private Integer maxAge;
+
 
     @PrePersist
     void onCreate() {

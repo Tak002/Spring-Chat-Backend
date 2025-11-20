@@ -38,13 +38,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        if(token == null) {
+        if (token == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
-        String id = TokenUtil.validateAccessTokenAndGetID(token);
-        //id가 null이면 토큰이 유효하지 않은 것으로 간주하고 필터 체인 계속 진행하지 않음
-        if(id == null) {
+        String idStr = TokenUtil.validateAccessTokenAndGetID(token);
+
+        if (idStr == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+        final Long id;
+        try {
+            id = Long.valueOf(idStr);
+        } catch (NumberFormatException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
@@ -52,7 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         //토큰이 유효한 경우, request에 userId 속성 추가
         request.setAttribute("userId", id);
         log.info("userId from token: {}", id);
-        filterChain.doFilter(request,response);
+        filterChain.doFilter(request, response);
     }
 
     private String resolveBearerToken(String header) {
