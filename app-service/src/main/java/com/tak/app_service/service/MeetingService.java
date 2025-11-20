@@ -7,6 +7,7 @@ import com.tak.app_service.entity.Media;
 import com.tak.app_service.entity.Meeting;
 import com.tak.app_service.repository.MeetingRepository;
 import com.tak.common.appUser.AppUser;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,11 +28,15 @@ public class MeetingService {
                 .endAt(meetingCreateRequest.endAt())
                 .place(meetingCreateRequest.place())
                 .maxMembers(meetingCreateRequest.participantLimit())
-                .thumbnail(Media.builder().id(meetingCreateRequest.thumbnailId()).build())
-                .linkedEvent(Event.builder().id(meetingCreateRequest.linkedEventId()).build())
-                .gender(meetingCreateRequest.rules().gender())
-                .minAge(meetingCreateRequest.rules().ageRange().min())
-                .maxAge(meetingCreateRequest.rules().ageRange().max())
+                .thumbnail(meetingCreateRequest.thumbnailId() != null
+                        ? Media.builder().id(meetingCreateRequest.thumbnailId()).build() : null)
+                .linkedEvent(meetingCreateRequest.linkedEventId() != null
+                        ? Event.builder().id(meetingCreateRequest.linkedEventId()).build() : null)
+                .gender(meetingCreateRequest.rules() != null ? meetingCreateRequest.rules().gender() : null)
+                .minAge(meetingCreateRequest.rules() != null && meetingCreateRequest.rules().ageRange() != null
+                        ? meetingCreateRequest.rules().ageRange().min() : null)
+                .maxAge(meetingCreateRequest.rules() != null && meetingCreateRequest.rules().ageRange() != null
+                        ? meetingCreateRequest.rules().ageRange().max() : null)
                 .build();
 
         return MeetingDto.toDto(meetingRepository.save(meeting));
@@ -42,10 +47,8 @@ public class MeetingService {
     }
 
     public MeetingDto getMeeting(Long id) {
-        Meeting meeting = meetingRepository.findById(id).orElse(null);
-        if (meeting == null) {
-            return null;
-        }
+        Meeting meeting = meetingRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + id));
         return MeetingDto.toDto(meeting);
     }
 }

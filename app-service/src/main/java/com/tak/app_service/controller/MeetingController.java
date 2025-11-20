@@ -29,6 +29,11 @@ public class MeetingController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getMeeting(@PathVariable Long id) {
         //todo 모임 조회 로직 구현
-        return ResponseEntity.ok().body(ApiResponseBody.ok(meetingService.getMeeting(id)));
+        try{
+            return ResponseEntity.ok().body(ApiResponseBody.ok(meetingService.getMeeting(id)));
+
+        }catch (Exception e){
+            return ResponseEntity.ok().body(ApiResponseBody.fail("EntityNotFoundException", e.getMessage()));
+        }
     }
 }
