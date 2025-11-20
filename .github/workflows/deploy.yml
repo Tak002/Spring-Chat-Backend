@@ -79,9 +79,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "infra/docker-compose.base.yml,infra/docker-compose.prod.yml,infra/nginx.conf"
+          source: "infra/docker-compose.base.yml,infra/docker-compose.prod.yml,infra/nginx.conf,db/migration"
           target: "/opt/chat/"
-          strip_components: 1
+          strip_components: 0
           overwrite: true
 
       - name: Deploy over SSH (compose pull + up)
@@ -121,13 +121,13 @@ jobs:
             # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"
             echo "${REGISTRY_TOKEN}" | docker login "${REGISTRY_SERVER}" -u "${REGISTRY_USERNAME}" --password-stdin
-  
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml pull  \
-              chat-ws chat-history app-service app-media app-auth
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-recreate \
+          
+            docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml pull  \
+              chat-ws chat-history app-service app-media app-auth db-migrate  
+            docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d --no-recreate \
               postgres redis reverse-proxy
-            docker compose -f docker-compose.base.yml -f docker-compose.prod.yml up -d --no-deps \
-              chat-ws chat-history app-service app-media app-auth
+            docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.prod.yml up -d --no-deps \
+              chat-ws chat-history app-service app-media app-auth db-migrate
             docker image prune -f
 
   release-notes:

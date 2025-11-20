@@ -49,11 +49,13 @@ public class TokenUtil {
     public static String validateAccessTokenAndGetID(String token) {
         try {
             Claims claims = parseClaims(token);
-            Date exp = claims.getExpiration();
-            if(exp.after(new Date())){
-                return claims.getSubject();
-            }
-            return null;
+            //임시로 만료 검사 주석 처리
+//            Date exp = claims.getExpiration();
+//            if(exp.after(new Date())){
+//                return claims.getSubject();
+//            }
+            return claims.getSubject();
+//            return null;
         } catch (Exception e) {
             log.debug("Token validation failed: {}", e.getMessage());
             return null;
