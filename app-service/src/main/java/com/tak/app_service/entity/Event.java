@@ -1,5 +1,6 @@
 package com.tak.app_service.entity;
 
+import com.tak.app_media.entity.Media;
 import com.tak.app_service.entity.enums.EventStatus;
 import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
