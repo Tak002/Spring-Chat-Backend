@@ -1,39 +1,19 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  creationTimestamp: "2025-11-11T04:28:17Z"
   name: chat-ws
-  namespace: default
-  resourceVersion: "7438"
-  uid: 2afc1cf0-8617-454f-92d4-6650d3860fb4
+  namespace: chat-app
 spec:
-  maxReplicas: 5
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 70
-        type: Utilization
-    type: Resource
-  minReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: chat-ws
-status:
-  conditions:
-  - lastTransitionTime: "2025-11-11T04:29:17Z"
-    message: the HPA controller was able to get the target's current scale
-    reason: SucceededGetScale
-    status: "True"
-    type: AbleToScale
-  - lastTransitionTime: "2025-11-11T04:29:17Z"
-    message: 'the HPA was unable to compute the replica count: failed to get cpu utilization:
-      missing request for cpu in container chat-ws of Pod chat-ws-6f7cf956b7-pkgnj'
-    reason: FailedGetResourceMetric
-    status: "False"
-    type: ScalingActive
-  currentMetrics:
-  - type: ""
-  currentReplicas: 1
-  desiredReplicas: 0
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
