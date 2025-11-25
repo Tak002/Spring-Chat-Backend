@@ -61,14 +61,12 @@ CREATE INDEX refresh_token_valid_lookup_idx
 -- =========================================
 CREATE TABLE media (
                        id            BIGSERIAL PRIMARY KEY,      -- 1부터 증가하는 숫자
-                       key           TEXT NOT NULL,              -- e.g. img_777
                        content_type  TEXT NOT NULL,
                        purpose       TEXT,                       -- THUMBNAIL | PROFILE | ...
                        owner_id      BIGINT REFERENCES app_user(id)
                                               ON UPDATE CASCADE
                                               ON DELETE SET NULL,
                        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-                       CONSTRAINT uq_media_key UNIQUE (key)
 );
 
 -- =========================================

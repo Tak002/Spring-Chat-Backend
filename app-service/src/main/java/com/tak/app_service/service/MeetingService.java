@@ -1,9 +1,9 @@
 package com.tak.app_service.service;
 
+import com.tak.app_media.entity.Media;
 import com.tak.app_service.dto.meeting.MeetingCreateRequest;
 import com.tak.app_service.dto.meeting.MeetingDto;
 import com.tak.app_service.entity.Event;
-import com.tak.app_service.entity.Media;
 import com.tak.app_service.entity.Meeting;
 import com.tak.app_service.repository.MeetingRepository;
 import com.tak.common.appUser.AppUser;

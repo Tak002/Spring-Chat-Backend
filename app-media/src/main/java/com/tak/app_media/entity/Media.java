@@ -20,10 +20,6 @@ public class Media {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 예: "img_777" 같은 비즈니스 키
-    @Column(name = "key", nullable = false, unique = true)
-    private String key;
-
     @Column(name = "content_type", nullable = false)
     @Builder.Default
     private String contentType = "jpg";

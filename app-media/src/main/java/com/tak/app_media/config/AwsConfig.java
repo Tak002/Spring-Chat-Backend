@@ -1,4 +1,4 @@
-package com.tak.app_service.config;
+package com.tak.app_media.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
