@@ -1,6 +1,5 @@
-package com.tak.app_service.entity;
+package com.tak.app_media.entity;
 
-import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,19 +14,17 @@ import java.time.Instant;
 @Builder
 public class Media {
 
+    // BIGSERIAL PK
     @Id
-    @Column(length = 255)
-    private String id; // e.g. img_777
-
-    @Column(name = "content_type", nullable = false)
-    private String contentType;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     // THUMBNAIL | PROFILE | ...
+    @Column(name = "purpose", nullable = false)
     private String purpose;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private AppUser owner;
+    @Column(name = "owner_id")
+    private Long ownerId;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

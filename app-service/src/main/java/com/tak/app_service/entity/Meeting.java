@@ -50,9 +50,8 @@ public class Meeting {
     @Column(name = "max_members")
     private Integer maxMembers;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "thumbnail_id")
-    private Media thumbnail;
+    @Column(name = "thumbnail_id")
+    private Long thumbnailId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "linked_event_id")

@@ -41,9 +41,8 @@ public class Event {
 
     private String place;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "thumbnail_id")
-    private Media thumbnail;
+    @Column(name = "thumbnail_id")
+    private Long thumbnailId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -55,7 +55,7 @@ public class AppUser {
     private String visibility;               // e.g. "PUBLIC" (확장 가능, enum 도입 전까지 TEXT로 유지)
 
     @Column(name = "profile_image_id")
-    private String profileImageId;           // FK -> media.id (별도 엔티티 매핑 전까지 문자열)
+    private Long profileImageId;           // FK -> media.id (별도 엔티티 매핑 전까지 문자열)
 
     @Column(name = "email_verified", nullable = false)
     @Builder.Default

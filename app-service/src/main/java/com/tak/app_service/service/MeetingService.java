@@ -3,7 +3,6 @@ package com.tak.app_service.service;
 import com.tak.app_service.dto.meeting.MeetingCreateRequest;
 import com.tak.app_service.dto.meeting.MeetingDto;
 import com.tak.app_service.entity.Event;
-import com.tak.app_service.entity.Media;
 import com.tak.app_service.entity.Meeting;
 import com.tak.app_service.repository.MeetingRepository;
 import com.tak.common.appUser.AppUser;
@@ -28,8 +27,7 @@ public class MeetingService {
                 .endAt(meetingCreateRequest.endAt())
                 .place(meetingCreateRequest.place())
                 .maxMembers(meetingCreateRequest.participantLimit())
-                .thumbnail(meetingCreateRequest.thumbnailId() != null
-                        ? Media.builder().id(meetingCreateRequest.thumbnailId()).build() : null)
+                .thumbnailId(meetingCreateRequest.thumbnailId())
                 .linkedEvent(meetingCreateRequest.linkedEventId() != null
                         ? Event.builder().id(meetingCreateRequest.linkedEventId()).build() : null)
                 .gender(meetingCreateRequest.rules() != null ? meetingCreateRequest.rules().gender() : null)

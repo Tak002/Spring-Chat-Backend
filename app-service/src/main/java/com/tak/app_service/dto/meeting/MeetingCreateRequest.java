@@ -13,6 +13,6 @@ public record MeetingCreateRequest(
         Rules rules,              // null이면 제한 없음
         List<String> tags,
         String joinFormId,        // null 허용
-        String thumbnailId,
+        Long thumbnailId,
         Long linkedEventId
 ) {}
