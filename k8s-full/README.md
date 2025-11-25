@@ -43,7 +43,8 @@ kubectl get pods -n chat-app -w
 ```md
 ## 📊 Observability Setup (Prometheus & Grafana)
 
-### 1️⃣ 설치
+###
+1️⃣ 설치
 
 ```bash
 kubectl create namespace monitoring
@@ -65,12 +66,6 @@ ID: admin
 PW: Secret decoding 필요
 
 kubectl get secret k8s-monitoring-grafana -n monitoring -o jsonpath="{.data.admin-password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
-
-3️⃣ 추천 Dashboard
-
-Kubernetes / Compute Resources / Pods
-
-Kubernetes / HPA
 
 
 ---
