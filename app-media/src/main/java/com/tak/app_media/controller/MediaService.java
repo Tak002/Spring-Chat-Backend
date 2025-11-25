@@ -3,13 +3,14 @@ package com.tak.app_media.controller;
 import com.tak.app_media.dto.PresignedUrlResponse;
 import com.tak.app_media.entity.Media;
 import com.tak.app_media.repository.MediaRepository;
-import com.tak.common.api.ApiResponseBody;
-import com.tak.common.appUser.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -54,8 +55,30 @@ public class MediaService {
         return new PresignedUrlResponse(save.getId(),uploadUrl);
     }
 
-    // todo get media url
-    public String getMediaUrl(Long mediaId){
-        return null;
+    public String getMediaUrl(Long mediaId) {
+        // 1) DB에 실제 media가 있는지 확인 (없으면 예외)
+        Media media = mediaRepository.findById(mediaId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 mediaId: " + mediaId));
+
+        // 2) S3 객체 key는 업로드 때와 동일하게 mediaId 문자열 사용
+        String key = String.valueOf(media.getId());
+
+        // 3) GetObject용 요청 생성
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        // 4) presigned GET URL 생성 (유효기간은 원하는 대로 조정)
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .getObjectRequest(getObjectRequest)
+                .signatureDuration(Duration.ofMinutes(10))
+                .build();
+
+        PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+
+        // 5) 최종 URL 반환
+        return presigned.url().toString();
     }
+
 }
