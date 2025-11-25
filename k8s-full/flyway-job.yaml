@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  namespace: chat-app
+spec:
+  # 재시도 시 재실행하지 않도록 설정
+  backoffLimit: 3
+  # 완료 후 자동 삭제 (선택사항)
+  ttlSecondsAfterFinished: 300
+  
+  template:
+    metadata:
+      labels:
+        app: db-migrate
+    spec:
+      restartPolicy: Never
+      
+      containers:
+      - name: flyway
+        image: flyway/flyway:10-alpine
+        
+        args:
+          - -connectRetries=60
+          - migrate
+        
+        env:
+          # Secret에서 DB 연결 정보 가져오기
+          - name: FLYWAY_URL
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: SPRING_DATASOURCE_URL
+          
+          - name: FLYWAY_USER
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: SPRING_DATASOURCE_USERNAME
+          
+          - name: FLYWAY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: SPRING_DATASOURCE_PASSWORD
+          
+          - name: FLYWAY_SCHEMAS
+            value: "public"
+        
+        volumeMounts:
+          - name: sql
+            mountPath: /flyway/sql
+            readOnly: true
+      
+      volumes:
+        - name: sql
+          configMap:
+            name: flyway-sql-configmap  # ✅ 이름 수정!

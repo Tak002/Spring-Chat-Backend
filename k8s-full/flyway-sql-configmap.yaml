@@ -1,0 +1,384 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flyway-sql-configmap
+  namespace: chat-app
+data:
+  V1__init_schema.sql: |
+    -- =========================================
+    -- Extensions
+    -- =========================================
+    CREATE EXTENSION IF NOT EXISTS citext;
+
+    -- =========================================
+    -- Core User & Auth
+    -- =========================================
+    CREATE TABLE app_user (
+                              id                BIGSERIAL PRIMARY KEY,
+                              email             CITEXT NOT NULL UNIQUE,
+                              password_hash     TEXT,
+                              status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','deleted')),
+                              role              TEXT   NOT NULL DEFAULT 'user'   CHECK (role IN ('user','admin')),
+                              nickname          CITEXT NOT NULL,
+                              bio               TEXT,
+                              visibility        TEXT,
+                              department     TEXT,
+                              birth_date     DATE,
+                              profile_image_id  TEXT,
+                              email_verified    BOOLEAN NOT NULL DEFAULT FALSE,
+                              created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+                              updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+                              deleted_at        TIMESTAMPTZ
+    );
+
+    -- email 인증 코드
+    CREATE TABLE email_verification (
+                                        id          BIGSERIAL PRIMARY KEY,
+                                        email       CITEXT NOT NULL,
+                                        code        TEXT   NOT NULL,
+                                        issued_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                        verified_at TIMESTAMPTZ
+    );
+
+    -- Refresh Token
+    CREATE TABLE refresh_token (
+                                   id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                   user_id      BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+                                   token_hash   CHAR(64) NOT NULL,
+                                   expires_at   TIMESTAMPTZ NOT NULL,
+                                   revoked      BOOLEAN NOT NULL DEFAULT FALSE,
+                                   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX refresh_token_user_id_idx ON refresh_token(user_id);
+    CREATE INDEX refresh_token_valid_lookup_idx ON refresh_token(token_hash, expires_at) WHERE revoked = FALSE;
+
+    -- =========================================
+    -- Media
+    -- =========================================
+    CREATE TABLE media (
+                           id            TEXT PRIMARY KEY,
+                           content_type  TEXT NOT NULL,
+                           purpose       TEXT,
+                           owner_id      BIGINT REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                           created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    -- =========================================
+    -- Tags
+    -- =========================================
+    CREATE TABLE tag (
+                         id          BIGSERIAL PRIMARY KEY,
+                         target      TEXT,
+                         name        CITEXT NOT NULL UNIQUE,
+                         created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                         CHECK (target IS NULL OR target IN ('events','meetings'))
+    );
+
+    -- =========================================
+    -- Events
+    -- =========================================
+    CREATE TABLE event (
+                           id            BIGSERIAL PRIMARY KEY,
+                           owner_id      BIGINT NOT NULL REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                           title         TEXT   NOT NULL,
+                           description   TEXT,
+                           start_at      TIMESTAMPTZ NOT NULL,
+                           end_at        TIMESTAMPTZ   ,
+                           place         TEXT,
+                           thumbnail_id  TEXT REFERENCES media(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                           status        TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','DELETED')),
+                           created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                           updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE event_tag (
+                               event_id  BIGINT NOT NULL REFERENCES event(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                               tag_id    BIGINT NOT NULL REFERENCES tag(id)   ON UPDATE CASCADE ON DELETE CASCADE,
+                               PRIMARY KEY (event_id, tag_id)
+    );
+
+    -- =========================================
+    -- Meetings
+    -- =========================================
+    CREATE TABLE meeting (
+                             id               BIGSERIAL PRIMARY KEY,
+                             host_id          BIGINT NOT NULL REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                             title            TEXT   NOT NULL,
+                             description      TEXT,
+                             date             DATE,
+                             time             TIME,
+                             place            TEXT,
+                             max_members      INTEGER,
+                             rules_json       TEXT,
+                             thumbnail_id     TEXT REFERENCES media(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                             linked_event_id  BIGINT REFERENCES event(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                             status           TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','CLOSED','CANCELLED','ENDED')),
+                             created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+                             updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE meeting_tag (
+                                 meeting_id  BIGINT NOT NULL REFERENCES meeting(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                 tag_id      BIGINT NOT NULL REFERENCES tag(id)     ON UPDATE CASCADE ON DELETE CASCADE,
+                                 PRIMARY KEY (meeting_id, tag_id)
+    );
+
+    -- =========================================
+    -- Join (approval flow)
+    -- =========================================
+    CREATE TABLE meeting_member (
+                                    id           BIGSERIAL PRIMARY KEY,
+                                    meeting_id   BIGINT NOT NULL REFERENCES meeting(id)  ON UPDATE CASCADE ON DELETE CASCADE,
+                                    user_id      BIGINT NOT NULL REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                    role         TEXT   NOT NULL DEFAULT 'MEMBER' CHECK (role IN ('HOST','MEMBER')),
+                                    state        TEXT   NOT NULL DEFAULT 'PENDING' CHECK (state IN ('PENDING','APPROVED','REJECTED','LEFT')),
+                                    requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                    decided_at   TIMESTAMPTZ
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_meeting_member_unique ON meeting_member(meeting_id, user_id);
+
+    CREATE TABLE join_form (
+                               id          BIGSERIAL PRIMARY KEY,
+                               meeting_id  BIGINT NOT NULL REFERENCES meeting(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                               created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE join_form_question (
+                                        id        BIGSERIAL PRIMARY KEY,
+                                        form_id   BIGINT NOT NULL REFERENCES join_form(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                        question  TEXT   NOT NULL,
+                                        type      TEXT   NOT NULL CHECK (type IN ('TEXT','CHOICE','NUMBER','DATE','OTHER')),
+                                        order_no  INTEGER NOT NULL
+    );
+
+    CREATE TABLE join_answer (
+                                 id           BIGSERIAL PRIMARY KEY,
+                                 meeting_id   BIGINT NOT NULL REFERENCES meeting(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                 user_id      BIGINT NOT NULL REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                 question_id  BIGINT NOT NULL REFERENCES join_form_question(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                 value        TEXT,
+                                 answered_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_join_answer_unique ON join_answer(meeting_id, user_id, question_id);
+
+    -- =========================================
+    -- Reports & Moderation
+    -- =========================================
+    CREATE TABLE report (
+                            id           BIGSERIAL PRIMARY KEY,
+                            reporter_id  BIGINT NOT NULL REFERENCES app_user(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                            target_type  TEXT   NOT NULL CHECK (target_type IN ('USER','MEETING','EVENT')),
+                            target_id    TEXT   NOT NULL,
+                            reason_type  TEXT   NOT NULL CHECK (reason_type IN ('SPAM','ABUSE','OTHER')),
+                            detail       TEXT,
+                            status       TEXT   NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','DECIDED')),
+                            created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_report_dedup ON report (reporter_id, target_type, target_id) WHERE status = 'PENDING';
+
+    CREATE TABLE moderation_decision (
+                                         id          BIGSERIAL PRIMARY KEY,
+                                         report_id   BIGINT NOT NULL REFERENCES report(id)    ON UPDATE CASCADE ON DELETE CASCADE,
+                                         admin_id    BIGINT NOT NULL REFERENCES app_user(id)  ON UPDATE CASCADE ON DELETE SET NULL,
+                                         action      TEXT   NOT NULL CHECK (action IN ('WARN','HOLD','REJECT')),
+                                         memo        TEXT,
+                                         decided_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    -- =========================================
+    -- Chat
+    -- =========================================
+    CREATE TABLE chat_room (
+                               id          TEXT PRIMARY KEY,
+                               meeting_id  BIGINT REFERENCES meeting(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                               created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+    CREATE TABLE chat_message (
+                                  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+                                  room_id      TEXT   NOT NULL REFERENCES chat_room(id) ON UPDATE CASCADE ON DELETE CASCADE,
+                                  sender_id    BIGINT NOT NULL REFERENCES app_user(id)  ON UPDATE CASCADE ON DELETE SET NULL,
+                                  content     TEXT        NOT NULL,
+                                  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                  edited_at   TIMESTAMPTZ,
+                                  is_deleted  BOOLEAN     NOT NULL DEFAULT FALSE
+    );
+
+    -- =========================================
+    -- Indexes
+    -- =========================================
+    CREATE INDEX IF NOT EXISTS ix_event_time ON event(start_at, end_at);
+    CREATE INDEX IF NOT EXISTS ix_meeting_status ON meeting(status);
+    CREATE INDEX IF NOT EXISTS ix_meeting_host ON meeting(host_id);
+    CREATE INDEX IF NOT EXISTS ix_tag_target ON tag(target);
+
+  V2__dumy_data.sql: |
+    -- =========================================
+    -- Dummy data: Users
+    -- =========================================
+    INSERT INTO app_user
+        (id, email, password_hash, nickname, bio, visibility, department, birth_date, profile_image_id, email_verified)
+    VALUES
+        (1, 'alice@uni.ac.kr', 'hashed_pw_alice', 'Alice', '알고리즘 스터디를 좋아하는 3학년입니다.', 'PUBLIC', '컴퓨터공학과', '2000-01-15', 'img_profile_1', TRUE),
+        (2, 'bob@uni.ac.kr', 'hashed_pw_bob', 'Bob', '보드게임과 친목 모임을 좋아합니다.', 'PUBLIC', '전자공학과', '1999-07-03', 'img_profile_2', TRUE),
+        (3, 'admin@uni.ac.kr', 'hashed_pw_admin', 'Admin', '서비스 전체 운영을 담당하는 관리자 계정입니다.', 'PUBLIC', '학생지원팀', '1995-05-10', 'img_profile_admin', TRUE);
+
+    -- =========================================
+    -- Dummy data: Media
+    -- =========================================
+    INSERT INTO media (id, content_type, purpose, owner_id)
+    VALUES
+        ('img_profile_1', 'image/jpeg', 'PROFILE', 1),
+        ('img_profile_2', 'image/jpeg', 'PROFILE', 2),
+        ('img_profile_admin', 'image/png', 'PROFILE', 3),
+        ('img_event_1', 'image/jpeg', 'THUMBNAIL', 1),
+        ('img_meeting_1', 'image/jpeg', 'THUMBNAIL', 1);
+
+    -- =========================================
+    -- Dummy data: Tags
+    -- =========================================
+    INSERT INTO tag (id, target, name)
+    VALUES
+        (1, 'events',   '스터디'),
+        (2, 'meetings', '친목'),
+        (3, NULL,       '게임');
+
+    -- =========================================
+    -- Dummy data: Events
+    -- =========================================
+    INSERT INTO event (id, owner_id, title, description, start_at, end_at, place, thumbnail_id, status)
+    VALUES
+        (1, 1, '알고리즘 스터디 OT', '한 학기 동안 진행될 알고리즘 스터디의 오리엔테이션입니다.', '2025-11-20 19:00:00+09', '2025-11-20 21:00:00+09', '공학관 101호', 'img_event_1', 'ACTIVE'),
+        (2, 2, '보드게임 번개 모임', '시험 끝난 기념으로 가볍게 보드게임을 즐기는 번개 모임입니다.', '2025-11-22 14:00:00+09', '2025-11-22 18:00:00+09', '학생회관 3층 동아리방', NULL, 'ACTIVE');
+
+    INSERT INTO event_tag (event_id, tag_id)
+    VALUES
+        (1, 1), (1, 3), (2, 2), (2, 3);
+
+    -- =========================================
+    -- Dummy data: Meetings
+    -- =========================================
+    INSERT INTO meeting (id, host_id, title, description, date, time, place, max_members, rules_json, thumbnail_id, linked_event_id, status)
+    VALUES
+        (1, 1, '알고리즘 스터디 1주차', '기본적인 그리디/정렬 문제를 같이 풀어보는 첫 모임입니다.', '2025-11-21', '18:00:00', '공학관 201호', 6, '{"late_policy":"10분까지는 인정","no_show":"2회 이상 무단 결석 시 추방"}', 'img_meeting_1', 1, 'OPEN'),
+        (2, 2, '보드게임 친목 모임', '가볍게 친해지는 것을 목표로 한 보드게임 정기 모임입니다.', '2025-11-23', '15:00:00', '학생회관 3층 동아리방', 8, '{"game_types":["전략","파티"],"no_gambling":true}', NULL, 2, 'OPEN');
+
+    INSERT INTO meeting_tag (meeting_id, tag_id)
+    VALUES
+        (1, 1), (1, 2), (2, 2), (2, 3);
+
+    -- =========================================
+    -- Dummy data: Meeting members
+    -- =========================================
+    INSERT INTO meeting_member (meeting_id, user_id, role, state, requested_at, decided_at)
+    VALUES
+        (1, 1, 'HOST',   'APPROVED', '2025-11-15 10:00:00+09', '2025-11-15 10:00:00+09'),
+        (1, 2, 'MEMBER', 'APPROVED', '2025-11-16 12:00:00+09', '2025-11-16 13:00:00+09'),
+        (2, 2, 'HOST',   'APPROVED', '2025-11-16 09:00:00+09', '2025-11-16 09:00:00+09'),
+        (2, 1, 'MEMBER', 'PENDING',  '2025-11-17 20:30:00+09', NULL);
+
+    -- =========================================
+    -- Dummy data: Join form & questions
+    -- =========================================
+    INSERT INTO join_form (id, meeting_id)
+    VALUES (1, 1), (2, 2);
+
+    INSERT INTO join_form_question (id, form_id, question, type, order_no)
+    VALUES
+        (1, 1, '이 스터디에 지원하게 된 동기를 적어주세요.', 'TEXT',   1),
+        (2, 1, '알고리즘 문제 풀이 경험(년수)을 숫자로 적어주세요.', 'NUMBER', 2),
+        (3, 2, '좋아하는 보드게임/장르를 적어주세요.', 'TEXT', 1);
+
+    INSERT INTO join_answer (meeting_id, user_id, question_id, value)
+    VALUES
+        (1, 2, 1, '알고리즘 실력을 향상시키고 싶고, 꾸준히 문제를 풀 동료를 찾고 싶습니다.'),
+        (1, 2, 2, '1');
+
+    -- =========================================
+    -- Dummy data: Email verification
+    -- =========================================
+    INSERT INTO email_verification (email, code, issued_at, verified_at)
+    VALUES
+        ('newuser@uni.ac.kr', '123456', '2025-11-18 10:00:00+09', NULL),
+        ('alice@uni.ac.kr',   'ALICE1',  '2025-11-01 09:00:00+09', '2025-11-01 09:05:00+09');
+
+    -- =========================================
+    -- Dummy data: Reports & moderation
+    -- =========================================
+    INSERT INTO report (id, reporter_id, target_type, target_id, reason_type, detail, status, created_at)
+    VALUES
+        (1, 2, 'MEETING', '1', 'SPAM', '동일한 내용의 스터디 홍보가 여러 번 올라온 것 같습니다.', 'PENDING', '2025-11-18 11:00:00+09'),
+        (2, 1, 'MEETING', '2', 'ABUSE', '모임 채팅에서 부적절한 발언이 있었습니다.', 'DECIDED', '2025-11-17 21:00:00+09');
+
+    INSERT INTO moderation_decision (report_id, admin_id, action, memo, decided_at)
+    VALUES
+        (2, 3, 'WARN', '호스트에게 경고 메일 발송 및 추후 모니터링 예정.', '2025-11-18 09:30:00+09');
+
+    -- =========================================
+    -- Dummy data: Chat rooms & messages
+    -- =========================================
+    INSERT INTO chat_room (id, meeting_id, created_at)
+    VALUES
+        ('meeting-1-main', 1, '2025-11-18 09:00:00+09'),
+        ('meeting-2-main', 2, '2025-11-18 09:10:00+09');
+
+    INSERT INTO chat_message (room_id, sender_id, content, is_deleted)
+    VALUES
+        ('meeting-1-main', 1, '안녕하세요, 이번 주 1주차 스터디에서는 그리디 문제 3개 정도 풀 예정입니다.', FALSE),
+        ('meeting-1-main', 2, '네, 참여하겠습니다! 필요한 준비물이 있을까요?', FALSE),
+        ('meeting-2-main', 2, '오늘 보드게임 모임은 3시에 시작합니다. 시간 맞춰 와 주세요!', FALSE);
+
+  V3__alter_meeting_datetime.sql: |
+    -- 1) 새 컬럼 추가 (nullable 로 먼저 추가)
+    ALTER TABLE meeting
+        ADD COLUMN start_at TIMESTAMP,
+        ADD COLUMN end_at   TIMESTAMP;
+
+    -- 2) 기존 date + time 값으로 start_at / end_at 채우기
+    UPDATE meeting
+    SET start_at = date::timestamp + COALESCE(time, '00:00'::time),
+        end_at   = date::timestamp + COALESCE(time, '00:00'::time);
+
+    -- 3) description / place 가 NULL인 행을 임시 값으로 채우기
+    UPDATE meeting
+    SET description = ''
+    WHERE description IS NULL;
+
+    UPDATE meeting
+    SET place = ''
+    WHERE place IS NULL;
+
+    -- 4) NOT NULL 제약 추가
+    ALTER TABLE meeting
+        ALTER COLUMN start_at SET NOT NULL,
+        ALTER COLUMN end_at   SET NOT NULL,
+        ALTER COLUMN description SET NOT NULL,
+        ALTER COLUMN place        SET NOT NULL;
+
+    -- 5) 기존 date / time 컬럼 삭제
+    ALTER TABLE meeting
+        DROP COLUMN date,
+        DROP COLUMN time;
+
+  V4__alter_meeting_add_rules.sql: |
+    -- 1) 새 컬럼 추가 (nullable 로 먼저 추가)
+    ALTER TABLE meeting
+        ADD COLUMN gender TEXT CHECK (gender IN ('ANY', 'MALE', 'FEMALE')),
+        ADD COLUMN min_age INTEGER,
+        ADD COLUMN max_age INTEGER;
+
+    UPDATE meeting
+    SET gender = 'ANY'
+    WHERE gender IS NULL;
+
+    ALTER TABLE meeting
+        ALTER COLUMN gender SET NOT NULL;
+
+    ALTER TABLE meeting
+        DROP COLUMN rules_json;

@@ -1,0 +1,36 @@
+# 위 공통 템플릿 기반
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-auth
+  namespace: chat-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-auth
+  template:
+    metadata:
+      labels:
+        app: app-auth
+    spec:
+      containers:
+        - name: app-auth
+          image: tak002/app-auth:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-auth
+  namespace: chat-app
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: app-auth
