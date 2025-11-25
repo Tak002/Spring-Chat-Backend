@@ -20,7 +20,7 @@ CREATE TABLE app_user (
                           visibility        TEXT,                 -- e.g. PUBLIC | ...
                           department        TEXT,                 -- 학과
                           birth_date        DATE,                 -- 생년월일
-                          profile_image_id  TEXT,                 -- 나중에 media(key) FK 추가
+                          profile_image_id  BIGINT,                 -- 나중에 media(key) FK 추가
                           email_verified    BOOLEAN NOT NULL DEFAULT FALSE,
                           created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
                           updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -66,7 +66,7 @@ CREATE TABLE media (
                        owner_id      BIGINT REFERENCES app_user(id)
                                               ON UPDATE CASCADE
                                               ON DELETE SET NULL,
-                       created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                       created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- =========================================
@@ -93,7 +93,7 @@ CREATE TABLE event (
                        start_at      TIMESTAMPTZ NOT NULL,
                        end_at        TIMESTAMPTZ,
                        place         TEXT,
-                       thumbnail_id  TEXT REFERENCES media(key)
+                       thumbnail_id  BIGINT REFERENCES media(id)
                                                 ON UPDATE CASCADE
                                                 ON DELETE SET NULL,
                        status        TEXT NOT NULL DEFAULT 'ACTIVE'
@@ -128,7 +128,7 @@ CREATE TABLE meeting (
                          place            TEXT,
                          max_members      INTEGER,
                          rules_json       TEXT,   -- JSON 문자열 보관 시 JSONB로 변경 가능
-                         thumbnail_id     TEXT REFERENCES media(key)
+                         thumbnail_id     BIGINT REFERENCES media(id)
                                                      ON UPDATE CASCADE
                                                      ON DELETE SET NULL,
                          linked_event_id  BIGINT REFERENCES event(id)
@@ -283,6 +283,6 @@ CREATE INDEX IF NOT EXISTS ix_tag_target ON tag(target);
 ALTER TABLE app_user
     ADD CONSTRAINT fk_app_user_profile_image
         FOREIGN KEY (profile_image_id)
-            REFERENCES media(key)
+            REFERENCES media(id)
             ON UPDATE CASCADE
             ON DELETE SET NULL;

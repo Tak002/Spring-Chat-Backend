@@ -98,12 +98,17 @@ jobs:
           SPRING_DATA_REDIS_HOST: ${{ secrets.SPRING_DATA_REDIS_HOST }}
           SPRING_DATA_REDIS_PORT: ${{ secrets.SPRING_DATA_REDIS_PORT }}
           USE_LOCAL_INFRA: ${{ secrets.USE_LOCAL_INFRA }} # "true"면 로컬 postgres/redis 사용
+
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN,CORS_ALLOWED_ORIGINS,REDIS_PASSWORD,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,SPRING_DATA_REDIS_HOST,SPRING_DATA_REDIS_PORT,USE_LOCAL_INFRA
+          envs: IMAGE_TAG,REGISTRY_USERNAME,REGISTRY_TOKEN,CORS_ALLOWED_ORIGINS,REDIS_PASSWORD,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,SPRING_DATA_REDIS_HOST,SPRING_DATA_REDIS_PORT,USE_LOCAL_INFRA,AWS_REGION,AWS_ACCESS_KEY,AWS_SECRET_KEY,AWS_S3_BUCKET
           script: |
             set -euo pipefail
             mkdir -p /opt/chat
@@ -117,6 +122,11 @@ jobs:
             export MEDIA_IMAGE="${REGISTRY_USERNAME}/app-media"
             export AUTH_IMAGE="${REGISTRY_USERNAME}/app-auth"
             export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}"
+            
+            export AWS_REGION="${AWS_REGION}"
+            export AWS_ACCESS_KEY="${AWS_ACCESS_KEY}"
+            export AWS_SECRET_KEY="${AWS_SECRET_KEY}"
+            export AWS_S3_BUCKET="${AWS_S3_BUCKET}"
             
             # 2) 레지스트리 로그인
             : "${REGISTRY_SERVER:=docker.io}"

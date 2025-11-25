@@ -1,6 +1,5 @@
 package com.tak.app_service.entity;
 
-import com.tak.app_media.entity.Media;
 import com.tak.app_service.dto.meeting.Rules;
 import com.tak.app_service.entity.enums.MeetingStatus;
 import com.tak.common.appUser.AppUser;
@@ -51,9 +50,8 @@ public class Meeting {
     @Column(name = "max_members")
     private Integer maxMembers;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "thumbnail_id")
-    private Media thumbnail;
+    @Column(name = "thumbnail_id")
+    private Long thumbnailId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "linked_event_id")

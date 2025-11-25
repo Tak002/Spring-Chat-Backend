@@ -35,20 +35,20 @@ VALUES
 -- =========================================
 -- Dummy data: Media (owner_id는 이제 유저가 있으니 FK OK)
 -- =========================================
-INSERT INTO media (key, content_type, purpose, owner_id)
-VALUES
-    ('img_profile_1',    'image/jpeg', 'PROFILE',   1),
-    ('img_profile_2',    'image/jpeg', 'PROFILE',   2),
-    ('img_profile_admin','image/png',  'PROFILE',   3),
-    ('img_event_1',      'image/jpeg', 'THUMBNAIL', 1),
-    ('img_meeting_1',    'image/jpeg', 'THUMBNAIL', 1);
+-- INSERT INTO media (key, content_type, purpose, owner_id)
+-- VALUES
+--     ('img_profile_1',    'image/jpeg', 'PROFILE',   1),
+--     ('img_profile_2',    'image/jpeg', 'PROFILE',   2),
+--     ('img_profile_admin','image/png',  'PROFILE',   3),
+--     ('img_event_1',      'image/jpeg', 'THUMBNAIL', 1),
+--     ('img_meeting_1',    'image/jpeg', 'THUMBNAIL', 1);
 
 -- =========================================
 -- Users 의 profile_image_id 를 media.key 와 연결
 -- =========================================
-UPDATE app_user SET profile_image_id = 'img_profile_1'    WHERE id = 1;
-UPDATE app_user SET profile_image_id = 'img_profile_2'    WHERE id = 2;
-UPDATE app_user SET profile_image_id = 'img_profile_admin' WHERE id = 3;
+-- UPDATE app_user SET profile_image_id = 'img_profile_1'    WHERE id = 1;
+-- UPDATE app_user SET profile_image_id = 'img_profile_2'    WHERE id = 2;
+-- UPDATE app_user SET profile_image_id = 'img_profile_admin' WHERE id = 3;
 
 -- =========================================
 -- Dummy data: Tags
@@ -72,7 +72,7 @@ VALUES
      '2025-11-20 19:00:00+09',
      '2025-11-20 21:00:00+09',
      '공학관 101호',
-     'img_event_1',
+     null,
      'ACTIVE'),
     (2,
      2,
@@ -108,7 +108,7 @@ VALUES
      '공학관 201호',
      6,
      '{"late_policy":"10분까지는 인정","no_show":"2회 이상 무단 결석 시 추방"}',
-     'img_meeting_1',
+     null,
      1,
      'OPEN'),
     (2,

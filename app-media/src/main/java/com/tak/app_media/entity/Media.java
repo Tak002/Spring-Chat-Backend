@@ -1,6 +1,5 @@
 package com.tak.app_media.entity;
 
-import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,9 +27,8 @@ public class Media {
     @Column(name = "purpose", nullable = false)
     private String purpose;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private AppUser owner;
+    @Column(name = "owner_id")
+    private Long ownerId;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

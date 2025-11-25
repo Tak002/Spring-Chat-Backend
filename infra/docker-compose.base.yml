@@ -103,6 +103,9 @@ services:
   app-media:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/localDB
+      SPRING_DATASOURCE_USERNAME: localUser
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     expose:
       - "8080"
     restart: unless-stopped

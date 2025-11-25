@@ -23,7 +23,7 @@ public record MeetingDto(
         String place,
         Integer maxMembers,
 
-        String thumbnailId,
+        Long thumbnailId,
         Long linkedEventId,
 
         MeetingStatus status,
@@ -46,7 +46,7 @@ public record MeetingDto(
                 m.getEndAt(),
                 m.getPlace(),
                 m.getMaxMembers(),
-                m.getThumbnail() != null ? m.getThumbnail().getId() : null,
+                m.getThumbnailId() != null ? m.getThumbnailId() : null,
                 m.getLinkedEvent() != null ? m.getLinkedEvent().getId() : null,
                 m.getStatus(),
                 m.getGender(),

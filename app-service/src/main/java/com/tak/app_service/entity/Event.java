@@ -1,6 +1,5 @@
 package com.tak.app_service.entity;
 
-import com.tak.app_media.entity.Media;
 import com.tak.app_service.entity.enums.EventStatus;
 import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
@@ -42,9 +41,8 @@ public class Event {
 
     private String place;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "thumbnail_id")
-    private Media thumbnail;
+    @Column(name = "thumbnail_id")
+    private Long thumbnailId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

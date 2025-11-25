@@ -28,7 +28,7 @@ public class MediaService {
         //media id 생성
         Media media = Media.builder()
                 .purpose(type)
-                .owner(AppUser.builder().id(userId).build())
+                .ownerId(userId)
                 .build();
         //media db에 저장
         Media save = mediaRepository.save(media);
