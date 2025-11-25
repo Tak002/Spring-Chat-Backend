@@ -1,6 +1,7 @@
 package com.tak.app_media.controller;
 
 import com.tak.app_media.dto.PresignedUrlResponse;
+import com.tak.app_media.service.MediaService;
 import com.tak.common.api.ApiResponseBody;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

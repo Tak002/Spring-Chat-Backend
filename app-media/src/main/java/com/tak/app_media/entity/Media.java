@@ -19,10 +19,6 @@ public class Media {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "content_type", nullable = false)
-    @Builder.Default
-    private String contentType = "jpg";
-
     // THUMBNAIL | PROFILE | ...
     @Column(name = "purpose", nullable = false)
     private String purpose;

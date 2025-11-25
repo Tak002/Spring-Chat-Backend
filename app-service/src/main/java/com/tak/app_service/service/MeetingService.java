@@ -27,8 +27,7 @@ public class MeetingService {
                 .endAt(meetingCreateRequest.endAt())
                 .place(meetingCreateRequest.place())
                 .maxMembers(meetingCreateRequest.participantLimit())
-                .thumbnailId(meetingCreateRequest.thumbnailId() != null
-                        ? meetingCreateRequest.thumbnailId() : null)
+                .thumbnailId(meetingCreateRequest.thumbnailId())
                 .linkedEvent(meetingCreateRequest.linkedEventId() != null
                         ? Event.builder().id(meetingCreateRequest.linkedEventId()).build() : null)
                 .gender(meetingCreateRequest.rules() != null ? meetingCreateRequest.rules().gender() : null)

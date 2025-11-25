@@ -46,14 +46,14 @@ public record MeetingDto(
                 m.getEndAt(),
                 m.getPlace(),
                 m.getMaxMembers(),
-                m.getThumbnailId() != null ? m.getThumbnailId() : null,
+                m.getThumbnailId(),
                 m.getLinkedEvent() != null ? m.getLinkedEvent().getId() : null,
                 m.getStatus(),
                 m.getGender(),
                 m.getMinAge(),
                 m.getMaxAge(),
                 m.getCreatedAt(),
-                m.getUpdatedAt()
+            m.getUpdatedAt()
         );
     }
 

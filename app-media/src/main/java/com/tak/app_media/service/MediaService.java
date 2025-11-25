@@ -1,4 +1,4 @@
-package com.tak.app_media.controller;
+package com.tak.app_media.service;
 
 import com.tak.app_media.dto.PresignedUrlResponse;
 import com.tak.app_media.entity.Media;
@@ -39,9 +39,7 @@ public class MediaService {
                 .bucket(bucket)
                 .key(String.valueOf(mediaId))
                 .build();
-//        if(type.equals("profile")){
-//            프로필에 프로필 이미지 등록
-//        }
+
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                 .putObjectRequest(objectRequest)
                 .signatureDuration(Duration.ofMinutes(10)) // URL 유효시간
