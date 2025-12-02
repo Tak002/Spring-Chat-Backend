@@ -5,10 +5,9 @@ import com.tak.app_service.dto.meeting.MeetingDto;
 import com.tak.app_service.service.MeetingService;
 import com.tak.common.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
 public class MeetingController {
@@ -18,6 +17,7 @@ public class MeetingController {
     public ApiResponse<?> getAllMeetings() {
         return ApiResponse.ok(meetingService.getMeetings());
     }
+
     @PostMapping
     public ApiResponse<?> createMeeting(@RequestBody MeetingCreateRequest meetingCreateRequest, @RequestAttribute("userId") Long userId) {
         //todo 모임 생성 로직 구현

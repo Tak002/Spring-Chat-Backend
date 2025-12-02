@@ -3,12 +3,11 @@ package com.tak.app_service.controller;
 import com.tak.app_service.dto.user.CurrentUserDto;
 import com.tak.common.api.ApiResponse;
 import com.tak.common.appUser.AppUser;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-@Controller
+@RestController
 @RequestMapping("/api/users")
 public class UserInfoController {
 

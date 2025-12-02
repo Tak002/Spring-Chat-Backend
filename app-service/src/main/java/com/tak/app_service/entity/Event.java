@@ -31,6 +31,7 @@ public class Event {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "description")
     private String description;
 
     @Column(name = "start_at", nullable = false)
@@ -39,6 +40,7 @@ public class Event {
     @Column(name = "end_at")
     private Instant endAt;
 
+    @Column(name = "place")
     private String place;
 
     @Column(name = "thumbnail_id")

@@ -1,15 +1,29 @@
 package com.tak.app_service.dto.event;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.tak.app_service.entity.Event;
+
+import java.time.Instant;
 
 public record EventDto(
-        String id,
+        Long id,
+        Long owner_id,
         String title,
         String description,
-        LocalDateTime startAt,
-        LocalDateTime endAt,
+        Instant startAt,
+        Instant endAt,
         String place,
-        List<String> tags,
-        String thumbnailId
-) {}
+        Long thumbnailId
+) {
+    public static EventDto from(Event event) {
+        return new EventDto(
+                event.getId(),
+                event.getOwner().getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getStartAt(),
+                event.getEndAt(),
+                event.getPlace(),
+                event.getThumbnailId()
+        );
+    }
+}
