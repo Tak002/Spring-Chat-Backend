@@ -4,7 +4,7 @@ import com.tak.app_auth.dto.LoginResponse;
 import com.tak.app_auth.dto.SignupRequest;
 import com.tak.app_auth.dto.LoginRequest;
 import com.tak.app_auth.dto.TokenDto;
-import com.tak.common.api.ApiResponseBody;
+import com.tak.common.api.ApiResponse;
 import com.tak.common.appUser.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -46,9 +46,9 @@ public class UserAuthController {
     public ResponseEntity<?> createAppUser(@RequestBody SignupRequest request) {
         try{
             AppUser appuser  = userAuthService.createAppUser(request);
-            return ResponseEntity.ok().body(ApiResponseBody.ok(Map.of("appUser",appuser)));
+            return ResponseEntity.ok().body(ApiResponse.ok(Map.of("appUser",appuser)));
         }catch (Exception e){
-            return ResponseEntity.badRequest().body(ApiResponseBody.fail("Signup Failed",e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Signup Failed",e.getMessage()));
         }
     }
 
@@ -60,7 +60,7 @@ public class UserAuthController {
             // Refresh Token은 HttpOnly 쿠키로 내려주는 것도 가능(웹의 경우)
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, (String) tokens.get("refreshCookie"))
-                    .body(ApiResponseBody.ok(new LoginResponse(
+                    .body(ApiResponse.ok(new LoginResponse(
                             (String) tokens.get("accessToken"),
                             LoginResponse.AuthUser.fromAppUser((AppUser) tokens.get("appUser"))
                     )));
@@ -68,7 +68,7 @@ public class UserAuthController {
         }catch (Exception e){
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponseBody.fail("Login Failed",e.getMessage()));
+                    .body(ApiResponse.fail("Login Failed",e.getMessage()));
         }
     }
 

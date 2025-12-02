@@ -10,5 +10,5 @@ public record EventCreateRequest(
         LocalDateTime endAt,     // e.g. "2025-11-07T12:00:00"
         String place,
         List<String> tags,
-        String thumbnailId
+        Long thumbnailId
 ) {}

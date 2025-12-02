@@ -1,7 +1,6 @@
 package com.tak.app_auth.email;
 
-import com.tak.common.api.ApiResponseBody;
-import org.springframework.http.ResponseEntity;
+import com.tak.common.api.ApiResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,8 +12,8 @@ import java.util.Map;
 @RequestMapping("/auth/email/")
 public class EmailAuthController {
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyEmail(@RequestBody String email) {
+    public ApiResponse<?> verifyEmail(@RequestBody String email) {
         //todo 이메일 인증 구현
-        return ResponseEntity.ok().body(ApiResponseBody.ok(Map.of("status", "VERIFIED")));
+        return ApiResponse.ok(Map.of("status", "VERIFIED"));
     }
 }

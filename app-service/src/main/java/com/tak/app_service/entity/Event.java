@@ -23,14 +23,13 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // owner_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private AppUser owner;
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
 
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "description")
     private String description;
 
     @Column(name = "start_at", nullable = false)
@@ -39,6 +38,7 @@ public class Event {
     @Column(name = "end_at")
     private Instant endAt;
 
+    @Column(name = "place")
     private String place;
 
     @Column(name = "thumbnail_id")
