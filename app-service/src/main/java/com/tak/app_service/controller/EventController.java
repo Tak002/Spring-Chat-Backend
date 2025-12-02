@@ -1,5 +1,6 @@
 package com.tak.app_service.controller;
 
+import com.tak.app_service.dto.event.EventCreateRequest;
 import com.tak.app_service.dto.event.EventDto;
 import com.tak.app_service.entity.Event;
 import com.tak.app_service.service.EventService;
@@ -16,11 +17,13 @@ public class EventController {
     private final EventService eventService;
 
 
-//    // 이벤트 등록
-//    @PostMapping
-//    public ResponseEntity<?> createEvent(@RequestBody EventCreateRequest eventCreateRequest, @RequestAttribute("userId") Long userId) {
-//        return ApiResponse
-//    }
+    // 이벤트 등록
+    @PostMapping
+    public ApiResponse<?> createEvent(@RequestBody EventCreateRequest eventCreateRequest, @RequestAttribute("userId") Long userId) {
+        Event event = eventService.createEvent(eventCreateRequest, userId);
+        EventDto eventDto = EventDto.from(event);
+        return ApiResponse.ok(eventDto);
+    }
 
     // 이벤트 조회
     @GetMapping("/{id}")
