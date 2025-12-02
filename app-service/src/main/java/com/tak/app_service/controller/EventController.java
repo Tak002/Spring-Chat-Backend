@@ -27,10 +27,9 @@ public class EventController {
 
     // 이벤트 조회
     @GetMapping("/{id}")
-    public ApiResponse<?> getEvent(@PathVariable String id) {
+    public ApiResponse<?> getEvent(@PathVariable Long id) {
         try{
-            Long idl = Long.parseLong(id);
-            Event event = eventService.getEvent(idl);
+            Event event = eventService.getEvent(id);
             if(event == null) {
                 return ApiResponse.fail("Not Found","Event not found");
             }
