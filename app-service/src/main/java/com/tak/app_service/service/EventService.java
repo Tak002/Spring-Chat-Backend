@@ -30,13 +30,13 @@ public class EventService {
     }
 
     public List<Event> myEvents(Long userId) {
-        return eventRepository.findByOwner(AppUser.builder().id(userId).build());
+        return eventRepository.findByOwnerId(userId);
     }
 
     public Event createEvent(EventCreateRequest eventCreateRequest, Long userId) {
 
         Event event = Event.builder()
-                .owner(AppUser.builder().id(userId).build())
+                .ownerId(userId)
                 .title(eventCreateRequest.title())
                 .description(eventCreateRequest.description())
                 .place(eventCreateRequest.place())

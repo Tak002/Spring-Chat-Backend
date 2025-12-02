@@ -6,7 +6,7 @@ import java.time.Instant;
 
 public record EventDto(
         Long id,
-        Long owner_id,
+        Long ownerId,
         String title,
         String description,
         Instant startAt,
@@ -17,7 +17,7 @@ public record EventDto(
     public static EventDto from(Event event) {
         return new EventDto(
                 event.getId(),
-                event.getOwner().getId(),
+                event.getOwnerId(),
                 event.getTitle(),
                 event.getDescription(),
                 event.getStartAt(),
