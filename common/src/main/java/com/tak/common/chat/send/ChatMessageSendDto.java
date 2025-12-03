@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class ChatMessageSendDto { // 클라이언트에서 서버로 전송되는 메시지 DTO
     private Long senderId;
     private String content;
-    private String roomId;
+    private Long roomId;
 }

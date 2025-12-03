@@ -25,7 +25,7 @@ public class RedisChatMessageSubscriber implements MessageListener {
             ChatMessagePubSubDto chatMessage = objectMapper.readValue(body, ChatMessagePubSubDto.class);
 
             // WebSocket 구독자에게 메시지 전달
-            String roomId = chatMessage.getRoomId();
+            Long roomId = chatMessage.getRoomId();
             template.convertAndSend("/topic/" + roomId, ChatMessageReceiveDto.from(chatMessage));
 
             log.info("Received message: {}", chatMessage);
