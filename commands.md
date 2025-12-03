@@ -86,6 +86,16 @@ docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml 
 ```
 
 * 설명: Postgres 테이블 확인 / Redis 연결 확인.
+## 🗃️ 데이터베이스 초기화
+
+```bash
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml stop postgres
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml rm -f postgres
+docker volume rm infra_pgdata
+docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d postgres db-migrate
+```
+
+* 설명: Postgres 테이블 확인 / Redis 연결 확인.
 
 ---
 

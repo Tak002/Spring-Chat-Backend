@@ -201,20 +201,15 @@ VALUES
      '2025-11-18 09:30:00+09');
 
 -- =========================================
--- Dummy data: Chat rooms & messages
+-- Dummy data: Chat messages
+--   room_id는 이제 meeting(id)를 참조
 -- =========================================
-INSERT INTO chat_room
-(id, meeting_id, created_at)
-VALUES
-    ('meeting-1-main', 1, '2025-11-18 09:00:00+09'),
-    ('meeting-2-main', 2, '2025-11-18 09:10:00+09');
-
 INSERT INTO chat_message
 (room_id, sender_id, content, is_deleted)
 VALUES
-    ('meeting-1-main', 1,
+    (1, 1,
      '안녕하세요, 이번 주 1주차 스터디에서는 그리디 문제 3개 정도 풀 예정입니다.', FALSE),
-    ('meeting-1-main', 2,
+    (1, 2,
      '네, 참여하겠습니다! 필요한 준비물이 있을까요?', FALSE),
-    ('meeting-2-main', 2,
+    (2, 2,
      '오늘 보드게임 모임은 3시에 시작합니다. 시간 맞춰 와 주세요!', FALSE);
