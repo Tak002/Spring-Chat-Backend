@@ -95,7 +95,7 @@ docker volume rm infra_pgdata
 docker compose -f infra/docker-compose.base.yml -f infra/docker-compose.dev.yml up -d postgres db-migrate
 ```
 
-* 설명: Postgres 테이블 확인 / Redis 연결 확인.
+* 설명: Postgres 컨테이너를 완전히 제거하고 볼륨을 삭제한 후 재생성하여 데이터베이스를 초기 상태로 복원합니다.
 
 ---
 
