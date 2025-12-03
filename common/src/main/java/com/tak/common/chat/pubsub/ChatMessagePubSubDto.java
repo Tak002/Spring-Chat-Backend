@@ -17,11 +17,11 @@ public class ChatMessagePubSubDto { //서버 간의 메시지 전달용
     private UUID tempId = UUID.randomUUID();
     private Long senderId;
     private String content;
-    private String roomId;
+    private Long roomId;
 
-    public static ChatMessagePubSubDto from(ChatMessageSendDto sendDto) {
+    public static ChatMessagePubSubDto from(ChatMessageSendDto sendDto, Long senderId) {
         return ChatMessagePubSubDto.builder()
-                .senderId(sendDto.getSenderId())
+                .senderId(senderId)
                 .content(sendDto.getContent())
                 .roomId(sendDto.getRoomId())
                 .build();

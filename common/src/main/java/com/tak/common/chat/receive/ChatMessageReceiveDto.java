@@ -13,13 +13,13 @@ public class ChatMessageReceiveDto { // 서버에서 클라이언트로 전송�
     private UUID id;
     private Long senderId;
     private String content;
-    private String roomId;
+    private Long roomId;
     private OffsetDateTime createdAt;
     private OffsetDateTime editedAt;
     private boolean deleted;
 
     // 편의 팩토리
-    public static ChatMessageReceiveDto of(UUID id, Long senderId, String content, String roomId, OffsetDateTime createdAt, OffsetDateTime editedAt, boolean deleted) {
+    public static ChatMessageReceiveDto of(UUID id, Long senderId, String content, Long roomId, OffsetDateTime createdAt, OffsetDateTime editedAt, boolean deleted) {
         return ChatMessageReceiveDto.builder()
                 .id(id)
                 .senderId(senderId)

@@ -246,17 +246,10 @@ CREATE TABLE moderation_decision (
 -- =========================================
 -- Chat (history service)
 -- =========================================
-CREATE TABLE chat_room (
-                           id          TEXT PRIMARY KEY,                 -- roomId
-                           meeting_id  BIGINT REFERENCES meeting(id)
-                                                  ON UPDATE CASCADE
-                                                  ON DELETE SET NULL,
-                           created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
 
 CREATE TABLE chat_message (
                               id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),  -- 메시지 고유 ID
-                              room_id     TEXT   NOT NULL REFERENCES chat_room(id)
+                              room_id     BIGINT   NOT NULL REFERENCES meeting(id)
                                   ON UPDATE CASCADE
                                   ON DELETE CASCADE,
                               sender_id   BIGINT NOT NULL REFERENCES app_user(id)

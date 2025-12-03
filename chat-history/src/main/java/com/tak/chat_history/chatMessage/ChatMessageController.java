@@ -22,7 +22,7 @@ public class ChatMessageController {
     }
 
     @GetMapping("/{roomId}/messages")
-    public ChatMessagesReceiveDto getMessages(@PathVariable String roomId) {
+    public ChatMessagesReceiveDto getMessages(@PathVariable Long roomId) {
         List<ChatMessageReceiveDto> messages = chatMessageRepository
                 .findByRoomIdAndDeletedFalseOrderByCreatedAtAsc(roomId)
                 .stream()

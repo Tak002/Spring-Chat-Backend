@@ -1,5 +1,7 @@
 package com.tak.chat_ws.websocket;
 
+import com.tak.chat_ws.config.UserIdHandshakeInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -8,7 +10,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final UserIdHandshakeInterceptor userIdHandshakeInterceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -16,6 +21,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*");
 
         registry.addEndpoint("/ws-sockjs")
+                .addInterceptors(userIdHandshakeInterceptor)
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
 

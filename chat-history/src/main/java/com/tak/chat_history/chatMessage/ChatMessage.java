@@ -26,7 +26,7 @@ public class ChatMessage {
     private UUID id;
 
     @Column(name = "room_id", nullable = false)
-    private String roomId; // REFERENCES chat_room(id)
+    private Long roomId; // REFERENCES meeting(id)
 
     @Column(name = "sender_id") // REFERENCES app_user(id)
     private Long senderId; // ON DELETE SET NULL과 정합을 맞추기 위해 nullable 허용
@@ -46,7 +46,7 @@ public class ChatMessage {
     private boolean deleted;
 
     // 편의 팩토리
-    public static ChatMessage of(String roomId, Long senderId, String content) {
+    public static ChatMessage of(Long roomId, Long senderId, String content) {
         return ChatMessage.builder()
                 .roomId(roomId)
                 .senderId(senderId)
