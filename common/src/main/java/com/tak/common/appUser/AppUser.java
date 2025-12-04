@@ -72,7 +72,12 @@ public class AppUser {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "sex")
+    @Enumerated(EnumType.STRING)
+    private Sex sex;
+
     // --- Enum 정의 (DB CHECK 값과 동일한 소문자) ---
     public enum Status { active, suspended, deleted }
     public enum Role { user, admin }
+    public enum Sex {male, female}
 }
