@@ -16,7 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -58,7 +59,7 @@ public class MeetingService {
     }
     public List<MeetingDto> getMeetings() {
         List<Meeting> all = meetingRepository.findAll();
-        return all.stream().map(MeetingDto::toDto).collect(Collectors.toList());
+        return all.stream().map(MeetingDto::toDto).collect(toList());
     }
 
     public MeetingDetailDto getMeetingDetails(Long id) {
@@ -87,5 +88,15 @@ public class MeetingService {
         }
         meetingMemberRepository.deleteAllByMeetingId(id);
         meetingRepository.deleteById(id);
+    }
+
+    public List<MeetingDto> getMeetingsByEventId(Long eventId) {
+        List<Meeting> meetings = meetingRepository.findByLinkedEventId(eventId);
+        return meetings.stream().map(MeetingDto::toDto).collect(toList());
+    }
+
+    public List<MeetingDto> getMeetingsByTitleKeyword(String keyword) {
+        List<Meeting> meetings = meetingRepository.findByTitleContains(keyword);
+        return meetings.stream().map(MeetingDto::toDto).toList();
     }
 }
