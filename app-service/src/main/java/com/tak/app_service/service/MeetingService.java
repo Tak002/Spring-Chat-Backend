@@ -64,23 +64,16 @@ public class MeetingService {
         Meeting meeting = meetingRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + id));
         List<Long> memberIdList = meetingMemberRepository.findUserIdByMeetingId(id);
-        List<AppUser> members = memberIdList.stream()
-                .map(i -> appUserRepository.findById(i)
-                        .orElseThrow(() -> new EntityNotFoundException("AppUser not found with id: " + i)))
-                .toList();
-
+        List<AppUser> members = appUserRepository.findAllById(memberIdList);
         return MeetingDetailDto.from(meeting, members);
     }
 
     public List<MeetingDto> getMyMeetings(Long userId) {
         List<Long> meetingIdList = meetingMemberRepository.findMeetingIdByUserId(userId);
-        List<MeetingDto> meetings = meetingIdList.stream()
-                .map(i -> meetingRepository.findById(i)
-                        .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + i)))
+        List<Meeting> meetings = meetingRepository.findAllById(meetingIdList);
+        return meetings.stream()
                 .map(MeetingDto::toDto)
                 .toList();
-
-        return meetings;
     }
 
     public void deleteMeeting(Long id, Long userId) {
@@ -90,6 +83,7 @@ public class MeetingService {
         if(!hostId.equals(userId)) {
             throw new IllegalArgumentException("Only the host can delete the meeting.");
         }
+        meetingMemberRepository.deleteAllByMeetingId(id);
         meetingRepository.deleteById(id);
     }
 }
