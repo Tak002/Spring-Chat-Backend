@@ -11,6 +11,7 @@ import com.tak.app_service.repository.MeetingMemberRepository;
 import com.tak.app_service.repository.MeetingRepository;
 import com.tak.common.appUser.AppUser;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +77,7 @@ public class MeetingService {
                 .toList();
     }
 
+    @Transactional
     public void deleteMeeting(Long id, Long userId) {
         Meeting meeting = meetingRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Meeting not found with id: " + id));
