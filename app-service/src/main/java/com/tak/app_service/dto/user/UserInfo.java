@@ -21,8 +21,8 @@ public record UserInfo(
             appuser.getBio(),
             appuser.getProfileImageId(),
             appuser.getSex(),
-            30, // appuser.getUserScore()
-            13, // appuser.getLinksCount()
+            30, // TODO: 임시값. AppUser에 userScore 필드 추가 후 appuser.getUserScore()로 교체 필요
+            13, // TODO: 임시값. AppUser에 linksCount 필드 추가 후 appuser.getLinksCount()로 교체 필요
             meetingParticipationCount
         );
     }
