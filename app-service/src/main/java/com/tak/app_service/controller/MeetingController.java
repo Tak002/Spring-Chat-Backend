@@ -41,4 +41,14 @@ public class MeetingController {
     public ApiResponse<?> getMyMeetings(@RequestAttribute("userId") Long userId) {
         return ApiResponse.ok(meetingService.getMyMeetings(userId));
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<?> deleteMeeting(@PathVariable Long id, @RequestAttribute("userId") Long userId) {
+        try {
+            meetingService.deleteMeeting(id, userId);
+            return ApiResponse.ok("Meeting deleted successfully.");
+        } catch (Exception e) {
+            return ApiResponse.fail("Error", e.getMessage());
+        }
+    }
 }

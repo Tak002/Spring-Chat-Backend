@@ -82,4 +82,14 @@ public class MeetingService {
 
         return meetings;
     }
+
+    public void deleteMeeting(Long id, Long userId) {
+        Meeting meeting = meetingRepository.findById(id).orElseThrow(() ->
+                new EntityNotFoundException("Meeting not found with id: " + id));
+        Long hostId = meeting.getHostId();
+        if(!hostId.equals(userId)) {
+            throw new IllegalArgumentException("Only the host can delete the meeting.");
+        }
+        meetingRepository.deleteById(id);
+    }
 }
