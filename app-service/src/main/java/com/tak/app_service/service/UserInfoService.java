@@ -14,11 +14,12 @@ public class UserInfoService {
     private final MeetingMemberRepository meetingMemberRepository;
 
     public UserInfo getUserProfile(Long userId) {
-        if(!appUserRepository.existsById(userId)){
+        var userOpt = appUserRepository.findById(userId);
+        if(userOpt.isEmpty()){
             // need to feat error handling
             return null;
         }
-        var user = appUserRepository.findById(userId).get();
+        var user = userOpt.get();
         Integer meetingParticipationCount = meetingMemberRepository.countByUserId(userId);
         return UserInfo.from(user, meetingParticipationCount);
     }
