@@ -1,6 +1,7 @@
 package com.tak.app_service.controller;
 
 import com.tak.app_service.dto.user.UserInfo;
+import com.tak.app_service.dto.user.UserInfoUpdate;
 import com.tak.app_service.service.UserInfoService;
 import com.tak.common.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,13 @@ public class UserInfoController {
 
     //todo 유저 프로필 수정 기능 구현
     @PostMapping("/me")
-    public ApiResponse<?> updateMyProfile(@RequestAttribute("userId") Long userId){
-        return ApiResponse.ok();
+    public ApiResponse<?> updateMyProfile(@RequestAttribute("userId") Long userId, @RequestBody UserInfoUpdate userInfoUpdate) {
+        String nickname = userInfoUpdate.nickname();
+        String department = userInfoUpdate.department();
+        String bio = userInfoUpdate.bio();
+        Long profileImageId = userInfoUpdate.profileImageId();
+        UserInfo userInfo = userInfoService.updateUserProfile(userId,nickname, department, bio, profileImageId);
+        return ApiResponse.ok(userInfo);
     }
 
     @GetMapping("/{id}")
