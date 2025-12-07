@@ -1,10 +1,10 @@
 package com.tak.app_service.service;
 
 import com.tak.app_service.dto.event.EventCreateRequest;
+import com.tak.app_service.dto.event.EventDto;
 import com.tak.app_service.entity.Event;
 import com.tak.app_service.entity.enums.EventStatus;
 import com.tak.app_service.repository.EventRepository;
-import com.tak.common.appUser.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -46,5 +46,10 @@ public class EventService {
                 .status(EventStatus.ACTIVE)
                 .build();
         return eventRepository.save(event);
+    }
+
+    public List<EventDto> getEventsByTitleKeyword(String keyword) {
+        List<Event> events = eventRepository.findByTitleContains(keyword);
+        return events.stream().map(EventDto::from).toList();
     }
 }

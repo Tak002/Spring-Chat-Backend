@@ -16,7 +16,10 @@ public class MeetingController {
     private final MeetingService meetingService;
 
     @GetMapping
-    public ApiResponse<?> getAllMeetings() {
+    public ApiResponse<?> getAllMeetings(@RequestParam (required = false) Long eventId) {
+        if(eventId != null) {
+            return ApiResponse.ok(meetingService.getMeetingsByEventId(eventId));
+        }
         return ApiResponse.ok(meetingService.getMeetings());
     }
 
@@ -51,4 +54,5 @@ public class MeetingController {
             return ApiResponse.fail("Error", e.getMessage());
         }
     }
+
 }
