@@ -2,7 +2,6 @@ package com.tak.app_service.entity;
 
 import com.tak.app_service.entity.enums.MeetingMemberRole;
 import com.tak.app_service.entity.enums.MeetingMemberState;
-import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,14 +29,12 @@ public class MeetingMember {
     private Long id;
 
     // meeting_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meeting_id", nullable = false)
-    private Meeting meeting;
+    @Column(name = "meeting_id", nullable = false)
+    private Long meetingId;
 
     // user_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private AppUser user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

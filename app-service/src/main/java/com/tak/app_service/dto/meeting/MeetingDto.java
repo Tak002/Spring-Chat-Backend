@@ -12,7 +12,6 @@ public record MeetingDto(
         Long id,
 
         Long hostId,
-        String hostNickname,
 
         String title,
         String description,
@@ -38,8 +37,7 @@ public record MeetingDto(
     public static MeetingDto toDto(Meeting m) {
         return new MeetingDto(
                 m.getId(),
-                m.getHost().getId(),
-                m.getHost().getNickname(),
+                m.getHostId(),
                 m.getTitle(),
                 m.getDescription(),
                 m.getStartAt(),
@@ -47,7 +45,7 @@ public record MeetingDto(
                 m.getPlace(),
                 m.getMaxMembers(),
                 m.getThumbnailId(),
-                m.getLinkedEvent() != null ? m.getLinkedEvent().getId() : null,
+                m.getLinkedEventId(),
                 m.getStatus(),
                 m.getGender(),
                 m.getMinAge(),
