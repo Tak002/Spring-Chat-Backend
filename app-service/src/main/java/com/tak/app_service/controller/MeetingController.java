@@ -24,7 +24,6 @@ public class MeetingController {
     public ApiResponse<?> createMeeting(@RequestBody MeetingCreateRequest meetingCreateRequest, @RequestAttribute("userId") Long userId) {
         //todo 모임 생성 로직 구현
         MeetingDto meeting = meetingService.createMeeting(meetingCreateRequest, userId);
-        System.out.println("meeting = " + meeting);
         log.info("meeting = " + meeting);
         return ApiResponse.ok(meeting);
     }
