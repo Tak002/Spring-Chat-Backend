@@ -47,9 +47,7 @@ public class MeetingService {
                 .role(com.tak.app_service.entity.enums.MeetingMemberRole.HOST)
                 .state(MeetingMemberState.APPROVED)
                 .build();
-        System.out.println("host = " + host);
         MeetingMember save = meetingMemberRepository.save(host);
-        System.out.println("save = " + save);
         return MeetingDto.toDto(newMeeting);
     }
     public List<MeetingDto> getMeetings() {
