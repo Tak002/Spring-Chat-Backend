@@ -36,4 +36,9 @@ public class MeetingController {
             return ApiResponse.fail("EntityNotFoundException", e.getMessage());
         }
     }
+
+    @GetMapping("/me")
+    public ApiResponse<?> getMyMeetings(@RequestAttribute("userId") Long userId) {
+        return ApiResponse.ok(meetingService.getMyMeetings(userId));
+    }
 }

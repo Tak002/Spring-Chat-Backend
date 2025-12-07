@@ -71,4 +71,15 @@ public class MeetingService {
 
         return MeetingDetailDto.from(meeting, members);
     }
+
+    public List<MeetingDto> getMyMeetings(Long userId) {
+        List<Long> meetingIdList = meetingMemberRepository.findMeetingIdByUserId(userId);
+        List<MeetingDto> meetings = meetingIdList.stream()
+                .map(i -> meetingRepository.findById(i)
+                        .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + i)))
+                .map(MeetingDto::toDto)
+                .toList();
+
+        return meetings;
+    }
 }

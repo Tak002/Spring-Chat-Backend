@@ -11,4 +11,7 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
 
     @Query("select m.userId from MeetingMember m where m.meetingId = :meetingId")
     List<Long> findUserIdByMeetingId(Long meetingId);
+
+    @Query("select m.meetingId from MeetingMember m where m.userId = :userId")
+    List<Long> findMeetingIdByUserId(Long userId);
 }
