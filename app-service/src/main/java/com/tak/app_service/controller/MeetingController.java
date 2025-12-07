@@ -5,8 +5,10 @@ import com.tak.app_service.dto.meeting.MeetingDto;
 import com.tak.app_service.service.MeetingService;
 import com.tak.common.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
@@ -22,6 +24,8 @@ public class MeetingController {
     public ApiResponse<?> createMeeting(@RequestBody MeetingCreateRequest meetingCreateRequest, @RequestAttribute("userId") Long userId) {
         //todo 모임 생성 로직 구현
         MeetingDto meeting = meetingService.createMeeting(meetingCreateRequest, userId);
+        System.out.println("meeting = " + meeting);
+        log.info("meeting = " + meeting);
         return ApiResponse.ok(meeting);
     }
 
