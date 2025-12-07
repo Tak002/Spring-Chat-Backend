@@ -22,7 +22,6 @@ public class MeetingController {
 
     @PostMapping
     public ApiResponse<?> createMeeting(@RequestBody MeetingCreateRequest meetingCreateRequest, @RequestAttribute("userId") Long userId) {
-        //todo 모임 생성 로직 구현
         MeetingDto meeting = meetingService.createMeeting(meetingCreateRequest, userId);
         log.info("meeting = " + meeting);
         return ApiResponse.ok(meeting);
@@ -30,9 +29,8 @@ public class MeetingController {
 
     @GetMapping("/{id}")
     public ApiResponse<?> getMeeting(@PathVariable Long id) {
-        //todo 모임 조회 로직 구현
         try{
-            return ApiResponse.ok(meetingService.getMeeting(id));
+            return ApiResponse.ok(meetingService.getMeetingDetails(id));
 
         }catch (Exception e){
             return ApiResponse.fail("EntityNotFoundException", e.getMessage());
