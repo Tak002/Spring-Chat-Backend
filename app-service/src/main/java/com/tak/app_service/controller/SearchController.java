@@ -25,9 +25,17 @@ public class SearchController {
     public ApiResponse<?> search(@RequestParam String keyword, @RequestParam(required = false) String target) {
         List<EventDto> events = null;
         List<MeetingDto> meetings = null;
+
+        if(target != null && !target.equals("event") && !target.equals("meeting")) {
+            return ApiResponse.fail("INVALID_TARGET", "target은 'event', 'meeting' 또는 null이어야 합니다");
+        }
+        if(keyword.isEmpty()) {
+            return ApiResponse.fail("Invalid Request", "Keyword cannot be empty");
+        }
+
         if(target == null || target.equals("event")) {
             // 이벤트 검색
-            events= eventService.getEventByTitleKeyword(keyword); // 이벤트 검색 로직 추가
+            events= eventService.getEventsByTitleKeyword(keyword); // 이벤트 검색 로직 추가
         }
         if(target == null || target.equals("meeting")) {
             // 미팅 검색
