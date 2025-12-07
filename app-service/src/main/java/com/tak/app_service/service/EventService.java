@@ -48,7 +48,7 @@ public class EventService {
         return eventRepository.save(event);
     }
 
-    public List<EventDto> getEventByTitleKeyword(String keyword) {
+    public List<EventDto> getEventsByTitleKeyword(String keyword) {
         List<Event> events = eventRepository.findByTitleContains(keyword);
         return events.stream().map(EventDto::from).toList();
     }
