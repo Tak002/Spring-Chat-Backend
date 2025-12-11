@@ -1,21 +1,12 @@
 package com.tak.app_service.entity;
 
-import com.tak.common.appUser.AppUser;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
 
 @Entity
-@Table(
-    name = "join_answer",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "ux_join_answer_unique",
-            columnNames = {"meeting_id", "user_id", "question_id"}
-        )
-    }
-)
+@Table(name = "join_answer")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,22 +18,17 @@ public class JoinAnswer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // meeting_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meeting_id", nullable = false)
-    private Meeting meeting;
+    // meeting_id FK 대신 Long
+    @Column(name = "meeting_id", nullable = false)
+    private Long meetingId;
 
-    // user_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private AppUser user;
+    // user_id FK 대신 Long
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    // question_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", nullable = false)
-    private JoinFormQuestion question;
-
-    private String value;
+    // { "answers": [ [번호, "값"], ... ] } 형태 JSON 문자열
+    @Column(name = "answers_json", nullable = false, columnDefinition = "TEXT")
+    private String answersJson;
 
     @Column(name = "answered_at", nullable = false)
     private Instant answeredAt;

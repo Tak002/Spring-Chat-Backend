@@ -20,7 +20,7 @@ CREATE TABLE app_user (
                           visibility        TEXT,                 -- e.g. PUBLIC | ...
                           department        TEXT,                 -- 학과
                           birth_date        DATE,                 -- 생년월일
-                          profile_image_id  BIGINT,                 -- 나중에 media(key) FK 추가
+                          profile_image_id  BIGINT,               -- 나중에 media(id) FK 추가
                           email_verified    BOOLEAN NOT NULL DEFAULT FALSE,
                           created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
                           updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -114,6 +114,18 @@ CREATE TABLE event_tag (
 );
 
 -- =========================================
+-- Join Form (JSON 기반 폼 정의)
+-- =========================================
+CREATE TABLE join_form (
+                           id             BIGSERIAL PRIMARY KEY,
+                           user_id        BIGINT NOT NULL REFERENCES app_user(id)
+                               ON UPDATE CASCADE
+                               ON DELETE CASCADE,
+                           questions_json TEXT   NOT NULL,       -- JSON 형태의 문자열로 질문 목록 보관
+                           created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- =========================================
 -- Meetings
 -- =========================================
 CREATE TABLE meeting (
@@ -132,6 +144,9 @@ CREATE TABLE meeting (
                                                      ON UPDATE CASCADE
                                                      ON DELETE SET NULL,
                          linked_event_id  BIGINT REFERENCES event(id)
+                                                     ON UPDATE CASCADE
+                                                     ON DELETE SET NULL,
+                         join_form_id     BIGINT REFERENCES join_form(id)     -- 폼 연결
                                                      ON UPDATE CASCADE
                                                      ON DELETE SET NULL,
                          status           TEXT NOT NULL DEFAULT 'OPEN'
@@ -173,41 +188,23 @@ CREATE TABLE meeting_member (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_meeting_member_unique
     ON meeting_member(meeting_id, user_id);
 
-CREATE TABLE join_form (
-                           id          BIGSERIAL PRIMARY KEY,
-                           meeting_id  BIGINT NOT NULL REFERENCES meeting(id)
-                               ON UPDATE CASCADE
-                               ON DELETE CASCADE,
-                           created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE join_form_question (
-                                    id        BIGSERIAL PRIMARY KEY,
-                                    form_id   BIGINT NOT NULL REFERENCES join_form(id)
-                                        ON UPDATE CASCADE
-                                        ON DELETE CASCADE,
-                                    question  TEXT   NOT NULL,
-                                    type      TEXT   NOT NULL CHECK (type IN ('TEXT','CHOICE','NUMBER','DATE','OTHER')),
-                                    order_no  INTEGER NOT NULL
-);
-
+-- =========================================
+-- Join Answer (JSON 기반 응답)
+-- =========================================
 CREATE TABLE join_answer (
-                             id           BIGSERIAL PRIMARY KEY,
-                             meeting_id   BIGINT NOT NULL REFERENCES meeting(id)
+                             id            BIGSERIAL PRIMARY KEY,
+                             meeting_id    BIGINT NOT NULL REFERENCES meeting(id)
                                  ON UPDATE CASCADE
                                  ON DELETE CASCADE,
-                             user_id      BIGINT NOT NULL REFERENCES app_user(id)
+                             user_id       BIGINT NOT NULL REFERENCES app_user(id)
                                  ON UPDATE CASCADE
                                  ON DELETE CASCADE,
-                             question_id  BIGINT NOT NULL REFERENCES join_form_question(id)
-                                 ON UPDATE CASCADE
-                                 ON DELETE CASCADE,
-                             value        TEXT,
-                             answered_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                             answers_json  TEXT   NOT NULL,        -- JSON 형태의 문자열로 응답 보관
+                             answered_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_join_answer_unique
-    ON join_answer(meeting_id, user_id, question_id);
+    ON join_answer(meeting_id, user_id);
 
 -- =========================================
 -- Reports & Moderation
@@ -239,14 +236,13 @@ CREATE TABLE moderation_decision (
                                          ON UPDATE CASCADE
                                          ON DELETE SET NULL,
                                      action      TEXT   NOT NULL CHECK (action IN ('WARN','HOLD','REJECT')),
-    memo        TEXT,
-    decided_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                                     memo        TEXT,
+                                     decided_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- =========================================
 -- Chat (history service)
 -- =========================================
-
 CREATE TABLE chat_message (
                               id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),  -- 메시지 고유 ID
                               room_id     BIGINT   NOT NULL REFERENCES meeting(id)
@@ -264,13 +260,20 @@ CREATE TABLE chat_message (
 -- =========================================
 -- Helpful secondary indexes
 -- =========================================
-CREATE INDEX IF NOT EXISTS ix_event_time ON event(start_at, end_at);
-CREATE INDEX IF NOT EXISTS ix_meeting_status ON meeting(status);
-CREATE INDEX IF NOT EXISTS ix_meeting_host ON meeting(host_id);
-CREATE INDEX IF NOT EXISTS ix_tag_target ON tag(target);
+CREATE INDEX IF NOT EXISTS ix_event_time
+    ON event(start_at, end_at);
+
+CREATE INDEX IF NOT EXISTS ix_meeting_status
+    ON meeting(status);
+
+CREATE INDEX IF NOT EXISTS ix_meeting_host
+    ON meeting(host_id);
+
+CREATE INDEX IF NOT EXISTS ix_tag_target
+    ON tag(target);
 
 -- =========================================
--- Cyclic FK 마무리: app_user.profile_image_id → media.key
+-- Cyclic FK 마무리: app_user.profile_image_id → media.id
 -- (app_user, media 둘 다 이미 생성된 후 마지막에 FK 추가)
 -- =========================================
 ALTER TABLE app_user

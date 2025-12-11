@@ -75,6 +75,8 @@ public class Meeting {
     @Column(name="max_age")
     private Integer maxAge;
 
+    @Column(name = "join_form_id")
+    private Long joinFormId;
 
     @PrePersist
     void onCreate() {
