@@ -12,7 +12,7 @@ public record MeetingCreateRequest(
         Integer participantLimit,
         Rules rules,              // null이면 제한 없음
         List<String> tags,
-        String joinFormId,        // null 허용
+        Long joinFormId,        // null 허용
         Long thumbnailId,
         Long linkedEventId
 ) {}

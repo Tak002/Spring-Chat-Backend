@@ -18,10 +18,13 @@ public class JoinForm {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // meeting_id FK
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meeting_id", nullable = false)
-    private Meeting meeting;
+    // user_id FK 대신 Long
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    // { "questions": [ [번호, "내용"], ... ] } 형태 JSON 문자열
+    @Column(name = "questions_json", nullable = false, columnDefinition = "TEXT")
+    private String questionsJson;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

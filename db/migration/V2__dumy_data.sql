@@ -33,22 +33,25 @@ VALUES
      TRUE);
 
 -- =========================================
--- Dummy data: Media (owner_id는 이제 유저가 있으니 FK OK)
+-- Dummy data: Media
+--   id 1,2,3: 프로필 이미지
+--   id 4    : 여행 이미지
+--   id 5    : 알고리즘 이미지
 -- =========================================
--- INSERT INTO media (key, content_type, purpose, owner_id)
--- VALUES
---     ('img_profile_1',    'image/jpeg', 'PROFILE',   1),
---     ('img_profile_2',    'image/jpeg', 'PROFILE',   2),
---     ('img_profile_admin','image/png',  'PROFILE',   3),
---     ('img_event_1',      'image/jpeg', 'THUMBNAIL', 1),
---     ('img_meeting_1',    'image/jpeg', 'THUMBNAIL', 1);
+INSERT INTO media (id, content_type, purpose, owner_id)
+VALUES
+    (1, 'image/jpeg', 'PROFILE',   1),  -- Alice 프로필
+    (2, 'image/jpeg', 'PROFILE',   2),  -- Bob 프로필
+    (3, 'image/png',  'PROFILE',   3),  -- Admin 프로필
+    (4, 'image/jpeg', 'THUMBNAIL', 1),  -- 여행 이미지
+    (5, 'image/jpeg', 'THUMBNAIL', 1);  -- 알고리즘 이미지
 
 -- =========================================
--- Users 의 profile_image_id 를 media.key 와 연결
+-- Users 의 profile_image_id 를 media.id 로 연결
 -- =========================================
--- UPDATE app_user SET profile_image_id = 'img_profile_1'    WHERE id = 1;
--- UPDATE app_user SET profile_image_id = 'img_profile_2'    WHERE id = 2;
--- UPDATE app_user SET profile_image_id = 'img_profile_admin' WHERE id = 3;
+UPDATE app_user SET profile_image_id = 1 WHERE id = 1;
+UPDATE app_user SET profile_image_id = 2 WHERE id = 2;
+UPDATE app_user SET profile_image_id = 3 WHERE id = 3;
 
 -- =========================================
 -- Dummy data: Tags
@@ -61,6 +64,8 @@ VALUES
 
 -- =========================================
 -- Dummy data: Events
+--   event 1: 알고리즘 스터디 OT -> 알고리즘 이미지(5)
+--   event 2: 보드게임 번개 모임 -> 여행 이미지(4)
 -- =========================================
 INSERT INTO event
 (id, owner_id, title, description, start_at, end_at, place, thumbnail_id, status)
@@ -72,7 +77,7 @@ VALUES
      '2025-11-20 19:00:00+09',
      '2025-11-20 21:00:00+09',
      '공학관 101호',
-     null,
+     5,          -- 알고리즘 이미지
      'ACTIVE'),
     (2,
      2,
@@ -81,7 +86,7 @@ VALUES
      '2025-11-22 14:00:00+09',
      '2025-11-22 18:00:00+09',
      '학생회관 3층 동아리방',
-     NULL,
+     4,          -- 여행/친목 이미지
      'ACTIVE');
 
 -- Event-Tag 매핑
@@ -93,11 +98,41 @@ VALUES
     (2, 3);
 
 -- =========================================
+-- Dummy data: Join form (JSON 기반)
+-- =========================================
+-- =========================================
+-- Dummy data: Join form (JSON 기반, [번호, "내용"] 형식)
+-- =========================================
+INSERT INTO join_form (id, user_id, questions_json)
+VALUES
+    (
+        1,
+        1,  -- Alice가 만든 알고리즘 스터디 폼
+        '{
+          "questions": [
+            [1, "이 스터디에 지원하게 된 동기를 적어주세요."],
+            [2, "알고리즘 문제 풀이 경험(년수)을 숫자로 적어주세요."]
+          ]
+        }'
+    ),
+    (
+        2,
+        2,  -- Bob이 만든 보드게임 친목 모임 폼
+        '{
+          "questions": [
+            [1, "좋아하는 보드게임/장르를 적어주세요."],
+            [2, "모임에서 기대하는 분위기를 적어주세요."]
+          ]
+        }'
+    );
+
+
+-- =========================================
 -- Dummy data: Meetings
 -- =========================================
 INSERT INTO meeting
 (id, host_id, title, description, date, time, place,
- max_members, rules_json, thumbnail_id, linked_event_id, status)
+ max_members, rules_json, thumbnail_id, linked_event_id, join_form_id, status)
 VALUES
     (1,
      1,
@@ -108,8 +143,9 @@ VALUES
      '공학관 201호',
      6,
      '{"late_policy":"10분까지는 인정","no_show":"2회 이상 무단 결석 시 추방"}',
-     null,
-     1,
+     5,      -- 알고리즘 이미지
+     1,      -- linked_event_id
+     1,      -- join_form_id
      'OPEN'),
     (2,
      2,
@@ -120,8 +156,9 @@ VALUES
      '학생회관 3층 동아리방',
      8,
      '{"game_types":["전략","파티"],"no_gambling":true}',
-     NULL,
-     2,
+     4,      -- 여행/친목 이미지
+     2,      -- linked_event_id
+     2,      -- join_form_id
      'OPEN');
 
 -- Meeting-Tag 매핑
@@ -144,28 +181,34 @@ VALUES
     (2, 1, 'MEMBER', 'PENDING',  '2025-11-17 20:30:00+09', NULL);
 
 -- =========================================
--- Dummy data: Join form & questions
--- =========================================
-INSERT INTO join_form (id, meeting_id)
-VALUES
-    (1, 1),
-    (2, 2);
-
-INSERT INTO join_form_question
-(id, form_id, question, type, order_no)
-VALUES
-    (1, 1, '이 스터디에 지원하게 된 동기를 적어주세요.', 'TEXT',   1),
-    (2, 1, '알고리즘 문제 풀이 경험(년수)을 숫자로 적어주세요.', 'NUMBER', 2),
-    (3, 2, '좋아하는 보드게임/장르를 적어주세요.', 'TEXT', 1);
-
--- =========================================
--- Dummy data: Join answers
+-- Dummy data: Join answers (JSON 기반)
 -- =========================================
 INSERT INTO join_answer
-(meeting_id, user_id, question_id, value)
+(meeting_id, user_id, answers_json, answered_at)
 VALUES
-    (1, 2, 1, '알고리즘 실력을 향상시키고 싶고, 꾸준히 문제를 풀 동료를 찾고 싶습니다.'),
-    (1, 2, 2, '1');
+    (
+        1,
+        2,  -- Bob
+        '{
+          "answers": [
+            [1, "알고리즘 실력을 향상시키고, 꾸준히 문제를 풀 동료를 찾고 싶습니다."],
+            [2, "1"]
+          ]
+        }',
+        '2025-11-18 12:00:00+09'
+    ),
+    (
+        2,
+        1,
+        '{
+          "answers": [
+            [1, "카탄, 도미니언 같은 전략 게임을 좋아합니다."],
+            [2, "친목 위주로 편하게 이야기 나누는 분위기를 기대합니다."]
+          ]
+        }',
+        '2025-11-19 15:30:00+09'
+    );
+
 
 -- =========================================
 -- Dummy data: Email verification
@@ -202,7 +245,6 @@ VALUES
 
 -- =========================================
 -- Dummy data: Chat messages
---   room_id는 이제 meeting(id)를 참조
 -- =========================================
 INSERT INTO chat_message
 (room_id, sender_id, content, is_deleted)

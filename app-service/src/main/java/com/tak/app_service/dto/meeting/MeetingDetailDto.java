@@ -31,6 +31,8 @@ public record MeetingDetailDto (
         Integer minAge,
         Integer maxAge,
 
+        Long joinFormId,
+
         Instant createdAt,
         Instant updatedAt,
         List<AppUser> members
@@ -51,6 +53,7 @@ public record MeetingDetailDto (
                 meeting.getGender(),
                 meeting.getMinAge(),
                 meeting.getMaxAge(),
+                meeting.getJoinFormId(),
                 meeting.getCreatedAt(),
                 meeting.getUpdatedAt(),
                 members
