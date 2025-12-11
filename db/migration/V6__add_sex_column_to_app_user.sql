@@ -6,3 +6,15 @@ ALTER TABLE app_user
 ALTER TABLE app_user
     ADD CONSTRAINT chk_app_user_sex
         CHECK (sex IN ('male', 'female') OR sex IS NULL);
+
+UPDATE app_user
+SET sex = 'male'
+WHERE id = 1;
+
+UPDATE app_user
+SET sex = 'female'
+WHERE id = 2;
+
+UPDATE app_user
+SET sex = 'male'
+WHERE id = 3;

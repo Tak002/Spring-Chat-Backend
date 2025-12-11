@@ -31,6 +31,8 @@ public record MeetingDto(
         Integer minAge,
         Integer maxAge,
 
+        Long joinForm,
+
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -50,6 +52,7 @@ public record MeetingDto(
                 m.getGender(),
                 m.getMinAge(),
                 m.getMaxAge(),
+                m.getJoinFormId(),
                 m.getCreatedAt(),
             m.getUpdatedAt()
         );

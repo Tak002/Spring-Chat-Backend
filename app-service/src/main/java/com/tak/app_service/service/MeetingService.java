@@ -3,12 +3,11 @@ package com.tak.app_service.service;
 import com.tak.app_service.dto.meeting.MeetingCreateRequest;
 import com.tak.app_service.dto.meeting.MeetingDetailDto;
 import com.tak.app_service.dto.meeting.MeetingDto;
+import com.tak.app_service.entity.JoinAnswer;
 import com.tak.app_service.entity.Meeting;
 import com.tak.app_service.entity.MeetingMember;
 import com.tak.app_service.entity.enums.MeetingMemberState;
-import com.tak.app_service.repository.AppUserRepository;
-import com.tak.app_service.repository.MeetingMemberRepository;
-import com.tak.app_service.repository.MeetingRepository;
+import com.tak.app_service.repository.*;
 import com.tak.common.appUser.AppUser;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -25,6 +24,7 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final MeetingMemberRepository meetingMemberRepository;
     private final AppUserRepository appUserRepository;
+    private final JoinAnswerRepository joinAnswerRepository;
 
     public MeetingDto createMeeting(MeetingCreateRequest meetingCreateRequest, Long hostId) {
         Integer minAge = meetingCreateRequest.rules() != null && meetingCreateRequest.rules().ageRange() != null
@@ -45,6 +45,7 @@ public class MeetingService {
                 .gender(meetingCreateRequest.rules() != null ? meetingCreateRequest.rules().gender() : null)
                 .minAge(minAge)
                 .maxAge(maxAge)
+                .joinFormId(meetingCreateRequest.joinFormId())
                 .build();
 
         Meeting newMeeting = meetingRepository.save(meeting);
@@ -98,6 +99,65 @@ public class MeetingService {
     public List<MeetingDto> getMeetingsByTitleKeyword(String keyword) {
         List<Meeting> meetings = meetingRepository.findByTitleContains(keyword);
         return meetings.stream().map(MeetingDto::toDto).toList();
+    }
+
+    public boolean isNeedFormAnswer(Long meetingId) {
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + meetingId));
+        return meeting.getJoinFormId() != null;
+    }
+    // 유저 승인하기
+
+
+    // 유저를 미팅에 넣기
+    public MeetingMember addUserToMeeting(Long meetingId, Long userId) {
+        MeetingMember meetingMember = MeetingMember.builder()
+                .meetingId(meetingId)
+                .userId(userId)
+                .role(com.tak.app_service.entity.enums.MeetingMemberRole.MEMBER)
+                .state(MeetingMemberState.APPROVED)
+                .build();
+        return meetingMemberRepository.save(meetingMember);
+    }
+
+    @Transactional
+    public void approveFormAnswer(Long hostId, Long formAnswerId) {
+        // 1) 폼 응답 조회
+        JoinAnswer joinAnswer = joinAnswerRepository.findById(formAnswerId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Form answer not found with id: " + formAnswerId));
+
+        Long meetingId = joinAnswer.getMeetingId();
+        Long userId = joinAnswer.getUserId();
+
+        // 2) 미팅 조회 + host 권한 체크
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Meeting not found with id: " + meetingId));
+
+        if (!meeting.getHostId().equals(hostId)) {
+            throw new IllegalArgumentException("Only the host can approve form answers.");
+        }
+
+        // 3) 신청한 유저의 MeetingMember 찾기 (보통 PENDING 상태여야 함)
+        MeetingMember meetingMember = meetingMemberRepository.findByUserIdAndMeetingId(userId, meetingId);
+
+        if (meetingMember == null) {
+            // 폼은 있는데 멤버 레코드가 없다면, 설계에 따라:
+            // - 예외를 던지거나
+            // - 새로 생성해줄 수 있음. 여기서는 예외 쪽으로.
+            throw new EntityNotFoundException(
+                    "Join request not found for userId: " + userId + " and meetingId: " + meetingId
+            );
+        }
+
+        // 이미 승인된 경우 방어
+        if (meetingMember.getState() == MeetingMemberState.APPROVED) {
+            throw new IllegalArgumentException("User is already approved for this meeting.");
+        }
+
+        // 4) 상태를 APPROVED 로 변경
+        meetingMember.setState(MeetingMemberState.APPROVED);
     }
 
 }
