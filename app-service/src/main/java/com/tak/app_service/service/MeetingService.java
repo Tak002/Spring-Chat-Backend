@@ -99,4 +99,5 @@ public class MeetingService {
         List<Meeting> meetings = meetingRepository.findByTitleContains(keyword);
         return meetings.stream().map(MeetingDto::toDto).toList();
     }
+
 }

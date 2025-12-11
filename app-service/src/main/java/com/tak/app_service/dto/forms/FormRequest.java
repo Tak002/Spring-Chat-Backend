@@ -32,4 +32,28 @@ public record FormRequest(
             }
         }
     }
+
+    public String toJson() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"questions\":[");
+
+        for (int i = 0; i < questions.size(); i++) {
+            List<Object> item = questions.get(i);
+
+            int number = ((Number) item.get(0)).intValue();
+            String text = item.get(1).toString().replace("\"", "\\\"");
+
+            sb.append("[");
+            sb.append(number).append(",");
+            sb.append("\"").append(text).append("\"");
+            sb.append("]");
+
+            if (i < questions.size() - 1) {
+                sb.append(",");
+            }
+        }
+
+        sb.append("]}");
+        return sb.toString();
+    }
 }

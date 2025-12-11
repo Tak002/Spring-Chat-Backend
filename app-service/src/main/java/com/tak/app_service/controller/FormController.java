@@ -6,17 +6,28 @@ import com.tak.common.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@RestController("/api/forms")
+@RestController
+@RequestMapping("/api/forms")
 @RequiredArgsConstructor
 public class FormController {
     private final FormService formService;
     // 폼 등록하기
     @PostMapping
     public ApiResponse<?> createForm(@RequestAttribute("userId") Long userId, @RequestBody FormRequest formRequest) {
-        formRequest.validate();
-        return ApiResponse.ok();
+        try{
+            formRequest.validate();
+        }catch (Exception e){
+            return ApiResponse.fail("Invalid Request","Form request is invalid: " + e.getMessage());
+        }
+
+        return ApiResponse.ok(formService.createForm(userId, formRequest));
     }
-    // 폼 조회하기
+
+    @GetMapping
+    public ApiResponse<?> getMyForms(@RequestAttribute("userId") Long userId){
+        return ApiResponse.ok(formService.getForms(userId));
+    }
+
 
 
 }
