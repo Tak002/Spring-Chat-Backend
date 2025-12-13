@@ -121,11 +121,11 @@ public class MeetingService {
     }
 
     @Transactional
-    public void approveFormAnswer(Long hostId, Long formAnswerId) {
+    public void approveAnswer(Long hostId, Long answerId) {
         // 1) 폼 응답 조회
-        JoinAnswer joinAnswer = joinAnswerRepository.findById(formAnswerId)
+        JoinAnswer joinAnswer = joinAnswerRepository.findById(answerId)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Form answer not found with id: " + formAnswerId));
+                        new EntityNotFoundException("Form answer not found with id: " + answerId));
 
         Long meetingId = joinAnswer.getMeetingId();
         Long userId = joinAnswer.getUserId();
@@ -149,6 +149,7 @@ public class MeetingService {
 
         // 4) 상태를 APPROVED 로 변경
         meetingMember.setState(MeetingMemberState.APPROVED);
+        joinAnswerRepository.deleteById(joinAnswer.getId());
     }
 
 }

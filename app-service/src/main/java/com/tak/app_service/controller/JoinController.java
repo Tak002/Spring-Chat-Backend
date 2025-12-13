@@ -52,9 +52,9 @@ public class JoinController {
     }
 
     @PostMapping("/approve")
-    public ApiResponse<?> approveFormAnswer(@RequestAttribute("userId") Long hostId, @RequestParam Long formAnswerId) {
+    public ApiResponse<?> approveFormAnswer(@RequestAttribute("userId") Long hostId, @RequestParam Long answerId) {
         try {
-            meetingService.approveFormAnswer(hostId, formAnswerId);
+            meetingService.approveAnswer(hostId, answerId);
             return ApiResponse.ok("Form answer approved and user added to the meeting.");
         } catch (Exception e) {
             return ApiResponse.fail("Approval Failed", "Failed to approve form answer: " + e.getMessage());

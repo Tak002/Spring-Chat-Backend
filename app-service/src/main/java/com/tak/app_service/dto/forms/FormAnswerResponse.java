@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 public record FormAnswerResponse(
+        Long answerId,
         Long meetingId,
         Long fromId,
         Long userId,

@@ -32,6 +32,7 @@ public class FormMapper {
         List<List<Object>> answers = extractNestedArray(joinAnswer.getAnswersJson(), "answers");
 
         return new FormAnswerResponse(
+                joinAnswer.getId(),
                 joinAnswer.getMeetingId(),
                 formId,
                 joinAnswer.getUserId(),
