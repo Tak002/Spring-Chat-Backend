@@ -28,6 +28,12 @@ public class FormController {
         return ApiResponse.ok(formService.getForms(userId));
     }
 
-
+    @GetMapping("/{formId}")
+    public ApiResponse<?> getForm(@PathVariable Long formId) {
+        try{
+            return ApiResponse.ok(formService.getForm(formId));
+        }catch (Exception e){
+        return ApiResponse.fail("FORM.NOT_FOUND", "존재 하지 않는 formId");}
+    }
 
 }

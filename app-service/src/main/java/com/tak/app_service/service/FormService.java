@@ -93,4 +93,10 @@ public class FormService {
                         .mapToObj(i-> formMapper.toAnswerResponse(joinAnswers.get(i),joinFormIds.get(i)))
                         .toList();
     }
+
+    public FormResponse getForm(Long formId) {
+        JoinForm joinForm = joinFormRepository.findById(formId)
+                .orElseThrow(() -> new EntityNotFoundException("Form not found with id: " + formId));
+        return formMapper.toFormResponse(joinForm);
+    }
 }
