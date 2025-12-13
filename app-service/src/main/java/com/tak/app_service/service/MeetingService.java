@@ -140,16 +140,7 @@ public class MeetingService {
         }
 
         // 3) 신청한 유저의 MeetingMember 찾기 (보통 PENDING 상태여야 함)
-        MeetingMember meetingMember = meetingMemberRepository.findByUserIdAndMeetingId(userId, meetingId);
-
-        if (meetingMember == null) {
-            // 폼은 있는데 멤버 레코드가 없다면, 설계에 따라:
-            // - 예외를 던지거나
-            // - 새로 생성해줄 수 있음. 여기서는 예외 쪽으로.
-            throw new EntityNotFoundException(
-                    "Join request not found for userId: " + userId + " and meetingId: " + meetingId
-            );
-        }
+        MeetingMember meetingMember = meetingMemberRepository.findByUserIdAndMeetingId(userId, meetingId).orElseThrow();
 
         // 이미 승인된 경우 방어
         if (meetingMember.getState() == MeetingMemberState.APPROVED) {

@@ -3,6 +3,7 @@ package com.tak.app_service.service;
 import com.tak.app_service.dto.forms.*;
 import com.tak.app_service.entity.JoinAnswer;
 import com.tak.app_service.entity.JoinForm;
+import com.tak.app_service.entity.Meeting;
 import com.tak.app_service.entity.MeetingMember;
 import com.tak.app_service.entity.enums.MeetingMemberRole;
 import com.tak.app_service.entity.enums.MeetingMemberState;
@@ -41,7 +42,7 @@ public class FormService {
     @Transactional
     public FormAnswerResponse submitFormAnswer(Long userId, Long meetingId, FormAnswerRequest formAnswerRequest) {
         // 1) 미팅 존재 여부 확인
-        meetingRepository.findById(meetingId)
+        Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new EntityNotFoundException("Meeting not found with id: " + meetingId));
 
         // 2) 답변 저장
@@ -73,12 +74,23 @@ public class FormService {
             throw new IllegalArgumentException("User has already submitted an answer for this meeting.");
         }
         // 4) 응답 DTO 변환
-        return formMapper.toAnswerResponse(joinAnswer);
+        return formMapper.toAnswerResponse(joinAnswer,meeting.getJoinFormId());
     }
 
     public List<FormAnswerResponse> getFormAnswersByHostId(Long hostId) {
         List<Long> hostMeetingIds = meetingRepository.findIdByHostId(hostId);
         List<JoinAnswer> joinAnswers = joinAnswerRepository.findAllByMeetingIdIn(hostMeetingIds);
-        return joinAnswers.stream().map(formMapper::toAnswerResponse).toList();
+        List<Long> joinFormIds = joinAnswers.stream()
+                .map(answer -> meetingRepository.findById(answer.getMeetingId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Meeting not found with id: " + answer.getMeetingId()
+                        ))
+                        .getJoinFormId()
+                )
+                .toList();
+
+        return java.util.stream.IntStream.range(0, joinAnswers.size())
+                        .mapToObj(i-> formMapper.toAnswerResponse(joinAnswers.get(i),joinFormIds.get(i)))
+                        .toList();
     }
 }

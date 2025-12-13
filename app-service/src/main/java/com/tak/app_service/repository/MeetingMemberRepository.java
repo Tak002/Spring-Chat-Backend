@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Long> {
     @Query("""
@@ -33,5 +34,5 @@ public interface MeetingMemberRepository extends JpaRepository<MeetingMember, Lo
 
     void deleteAllByMeetingId(Long id);
 
-    MeetingMember findByUserIdAndMeetingId(Long userId, Long meetingId);
+    Optional<MeetingMember> findByUserIdAndMeetingId(Long userId, Long meetingId);
 }

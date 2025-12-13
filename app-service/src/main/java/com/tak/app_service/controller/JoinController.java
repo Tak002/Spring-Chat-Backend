@@ -2,6 +2,7 @@ package com.tak.app_service.controller;
 
 import com.tak.app_service.dto.forms.FormAnswerRequest;
 import com.tak.app_service.dto.forms.FormAnswerResponse;
+import com.tak.app_service.repository.MeetingMemberRepository;
 import com.tak.app_service.service.FormService;
 import com.tak.app_service.service.MeetingService;
 import com.tak.common.api.ApiResponse;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class JoinController {
     private final FormService formService;
     private final MeetingService meetingService;
+    private final MeetingMemberRepository meetingMemberRepository;
 
     // 미팅 참가하기
     // 폼이 필요없으면 바로 승인, 필요 있다면 폼 답변 제출 후 승인
@@ -24,7 +26,9 @@ public class JoinController {
         boolean needFormAnswer = meetingService.isNeedFormAnswer(meetingId);
 
         FormAnswerResponse formAnswerResponse;
-
+        if(meetingMemberRepository.findByUserIdAndMeetingId(userId,meetingId).isPresent()) {
+            return ApiResponse.fail("Already Joined", "User has already joined the meeting.");
+        }
         if(needFormAnswer && formAnswerRequest == null) {
             return ApiResponse.fail("Form Answer Required", "This meeting requires a form answer for joining.");
         }

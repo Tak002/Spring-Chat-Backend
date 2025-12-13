@@ -28,11 +28,12 @@ public class FormMapper {
     }
 
     // === 새로 추가: JoinAnswer -> AnswerResponse ===
-    public FormAnswerResponse toAnswerResponse(JoinAnswer joinAnswer) {
+    public FormAnswerResponse toAnswerResponse(JoinAnswer joinAnswer,Long formId) {
         List<List<Object>> answers = extractNestedArray(joinAnswer.getAnswersJson(), "answers");
 
         return new FormAnswerResponse(
                 joinAnswer.getMeetingId(),
+                formId,
                 joinAnswer.getUserId(),
                 answers,
                 joinAnswer.getAnsweredAt()
