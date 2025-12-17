@@ -39,6 +39,7 @@ public class UserAuthService {
             .department(request.department())
             .bio(request.bio())
             .birthDate(request.birthDate())
+            .sex(request.sex())
             .build();
         return appUserRepository.save(appUser);
 

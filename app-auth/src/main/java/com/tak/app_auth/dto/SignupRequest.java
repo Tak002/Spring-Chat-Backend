@@ -13,5 +13,6 @@ public record SignupRequest (
     String bio,
     LocalDate birthDate,
     String certificationNumber,
-    AppUser.Role role
+    AppUser.Role role,
+    AppUser.Sex sex
 ){}
